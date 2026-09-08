@@ -1,4 +1,4 @@
-# preppath
+# Scholar-Ai
 
 an AI-assisted web app that helps students prepare for entrance exams like NIMCET and PGCET-MCA, while also helping them build daily study habits.
 
