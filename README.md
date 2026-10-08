@@ -12,38 +12,81 @@ Most exam-prep tools focus only on content and ignore the harder part: staying c
 
 React 19 + Vite + TypeScript, React Router, Tailwind, Zod, Vitest · Supabase (Postgres + RLS, Auth with email and Google, Edge Functions) · Gemini (student's own key) · YouTube Data API + IFrame Player · Cloudflare Workers.
 
-## Run locally
+## Setup, step by step
+
+You need: Node.js 20+, a free [Supabase](https://supabase.com) account, and the Supabase CLI (`npm i -g supabase` or see the Supabase docs).
+
+### 1. Get the code running
 
 ```bash
+git clone https://github.com/Arv-31/Scholar-Ai.git
+cd Scholar-Ai
 npm install
-npm run dev      # http://localhost:5173
-npm test         # Vitest
-npm run lint
-npm run build
 ```
 
-`.env` (not committed) needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+Create a file named `.env` in the project folder (it is git-ignored, never commit it):
 
-## Set up Supabase (once)
+```
+VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your anon / publishable key>
+```
+
+Both values are in the Supabase website → your project → **Project Settings → API**.
+The project ref is the part of the URL before `.supabase.co`.
+
+### 2. Set up the database and server code (Supabase CLI)
+
+Run these in a terminal inside the project folder:
 
 ```bash
-supabase login
-supabase link --project-ref <your-project-ref>
-supabase db push                                 # tables, security rules, starter content
-supabase secrets set YOUTUBE_API_KEY=<key>       # typed in your terminal, never in code
+supabase login                                    # opens the browser, click Authorize
+supabase link --project-ref <your-project-ref>    # asks for your database password
+supabase db push                                  # creates tables, security rules, tasks and quiz questions
 supabase functions deploy ai
 supabase functions deploy gemini-key
 supabase functions deploy unit-videos
 ```
 
-In the Supabase dashboard → Authentication → URL Configuration, add your local and deployed site URLs to **Redirect URLs** (needed for Google sign-in and email confirmation).
+Forgot the database password? Supabase website → **Project Settings → Database → Reset database password**.
 
-## Deploy (Cloudflare Workers)
+### 3. Settings in the Supabase website
+
+1. **Authentication → URL Configuration**
+   - Site URL: `http://localhost:5173`
+   - Redirect URLs → Add URL: `http://localhost:5173` (later also your live site URL)
+2. **Edge Functions → Secrets → Add new secret** (only needed for unit videos)
+   - Name `YOUTUBE_API_KEY`, value = a YouTube Data API v3 key from Google Cloud Console
+3. **Authentication → Sign In / Providers → Google** (optional, for "Continue with Google")
+   - Turn it on and paste the Client ID and Client Secret from your Google Cloud OAuth client
+   - In Google Cloud, add the callback URL that Supabase shows there to the OAuth client's
+     "Authorized redirect URIs"
+
+### 4. Run it
+
+```bash
+npm run dev      # open http://localhost:5173
+```
+
+Sign up with email, choose an exam, take a quiz, mark the daily tasks done.
+For the AI tutor, Round 3 quizzes and book picks, each student pastes their own free Gemini key
+(from [Google AI Studio](https://aistudio.google.com/apikey)) in **Settings**.
+
+### Other commands
+
+```bash
+npm test         # Vitest unit tests
+npm run lint
+npm run build
+```
+
+### 5. Put it online (Cloudflare Workers)
 
 ```bash
 npx wrangler login
 npm run deploy
 ```
+
+Then add the new live URL to Supabase **Redirect URLs** (step 3.1).
 
 ## Folder guide
 
