@@ -24,3 +24,6 @@ dist-ssr
 *.sln
 *.sw?
 .wrangler
+
+# Notes for Claude Code (kept local only)
+CLAUDE.md
