@@ -1,0 +1,12 @@
+// Cloudflare Workers deploy config: serves the built React app (dist/) as static assets.
+// "single-page-application" sends unknown paths like /exam/unit/123 to index.html,
+// so React Router can show the right page on refresh.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "scholarai",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

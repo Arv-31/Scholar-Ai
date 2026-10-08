@@ -1,111 +1,190 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import 'tailwindcss';
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* ScholarAI theme: these become Tailwind classes like bg-ink, text-green, font-display */
+@theme {
+  --color-ink: #12151b;
+  --color-paper: #f4f5f1;
+  --color-surface: #ffffff;
+  --color-line: #e3e5df;
+  --color-muted: #646b76;
+  --color-green: #2f9e63;
+  --color-green-soft: #e4f3eb;
+  --color-ember: #e08a3c;
+  --color-ember-soft: #fbeedf;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+}
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    /* faint dot grid behind every page */
+    background-image: radial-gradient(rgb(18 21 27 / 0.07) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
+/* Small uppercase label used above headings */
+@utility eyebrow {
+  font-size: 11px;
   font-weight: 500;
-  color: var(--text-h);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+/* White rounded card */
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
+/* Thin square grid, drawn in the current text colour */
+@utility grid-lines {
+  background-image:
+    linear-gradient(currentColor 1px, transparent 1px),
+    linear-gradient(90deg, currentColor 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@utility field {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &::placeholder {
+    color: var(--color-muted);
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-green);
+    box-shadow: 0 0 0 4px rgb(47 158 99 / 0.15);
+  }
+}
+
+@utility btn-primary {
   display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--color-green);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s,
+    opacity 0.2s;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 10px 28px -10px rgb(47 158 99 / 0.8);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-green);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+/* Same as btn-primary, in the Default-mode ember colour */
+@utility btn-ember {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--color-ember);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s,
+    opacity 0.2s;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 10px 28px -10px rgb(224 138 60 / 0.8);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-ember);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* Quiet outlined button for secondary actions */
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Dark "screen" panel with a faint grid: used for the hero card on each page */
+@utility panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: var(--color-ink);
+  color: #fff;
+}
+
+/* Numbers that line up nicely in tiles and tables */
+@utility nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
