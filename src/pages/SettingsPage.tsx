@@ -8,9 +8,14 @@ import { signOut } from '../services/authService'
 import { listExams } from '../services/examService'
 import { errorMessage } from '../services/functionsClient'
 import { GeminiKeySchema, removeGeminiKey, saveGeminiKey } from '../services/keyService'
-import { updateMyExam, updateMyName } from '../services/profileService'
+import {
+  getStudyPrefs,
+  updateMyExam,
+  updateMyName,
+  updateStudyPrefs,
+} from '../services/profileService'
 
-// Account settings: name, exam, own Gemini key, sign out.
+// Account settings: name, exam, exam date + answer language, own Gemini key, sign out.
 export default function SettingsPage() {
   const { user } = useAuth()
   const { profile, refreshProfile } = useShell()
@@ -21,7 +26,12 @@ export default function SettingsPage() {
 
       {profile && (
         <>
-          <ProfileCard initialName={profile.display_name ?? ''} examId={profile.exam_id} onSaved={refreshProfile} />
+          <ProfileCard
+            initialName={profile.display_name ?? ''}
+            examId={profile.exam_id}
+            onSaved={refreshProfile}
+          />
+          <StudyCard />
           <GeminiKeyCard hint={profile.gemini_key_hint} onChanged={refreshProfile} />
         </>
       )}
@@ -185,7 +195,12 @@ function GeminiKeyCard({ hint, onChanged }: { hint: string | null; onChanged: ()
       {hint && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-paper px-4 py-3">
           <code className="nums text-sm">{hint}</code>
-          <button type="button" className="btn-ghost" onClick={() => void handleRemove()} disabled={busy}>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => void handleRemove()}
+            disabled={busy}
+          >
             Remove
           </button>
         </div>
@@ -205,11 +220,100 @@ function GeminiKeyCard({ hint, onChanged }: { hint: string | null; onChanged: ()
           onChange={(e) => setKey(e.target.value)}
           placeholder={hint ? 'Paste a new key to replace it' : 'Paste your key (starts with AIza)'}
         />
-        <button type="submit" className="btn-primary shrink-0 py-2! text-sm" disabled={busy || !key}>
+        <button
+          type="submit"
+          className="btn-primary shrink-0 py-2! text-sm"
+          disabled={busy || !key}
+        >
           {busy ? 'Checking…' : hint ? 'Replace' : 'Save key'}
         </button>
       </form>
       {error && <ErrorNote message={error} />}
     </section>
+  )
+}
+
+// Exam date (drives the countdown on Exam home) and the language the AI tutor answers in.
+function StudyCard() {
+  const prefs = useLoad(getStudyPrefs)
+  const [date, setDate] = useState<string | null>(null)
+  const [language, setLanguage] = useState<'en' | 'kn' | null>(null)
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [error, setError] = useState<string | null>(null)
+
+  if (!prefs.data) return null
+  const current = prefs.data
+  const shownDate = date ?? current.exam_date ?? ''
+  const shownLanguage = language ?? current.language
+
+  async function handleSave(e: FormEvent) {
+    e.preventDefault()
+    setStatus('saving')
+    setError(null)
+    try {
+      await updateStudyPrefs({ exam_date: shownDate || null, language: shownLanguage })
+      setStatus('saved')
+    } catch (err) {
+      setError(errorMessage(err))
+      setStatus('idle')
+    }
+  }
+
+  return (
+    <form onSubmit={handleSave} className="card space-y-4 p-6">
+      <div>
+        <h2 className="text-lg font-semibold">Study settings</h2>
+        <p className="mt-1 text-sm text-muted">
+          Your exam date shows a countdown and a daily target. The AI tutor and "Why was I wrong?"
+          can answer in Kannada.
+        </p>
+      </div>
+      {!current.available && (
+        <p className="bg-ember-soft px-3 py-2 text-sm">
+          These settings switch on after the latest database update is applied.
+        </p>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">Exam date</span>
+          <input
+            className="field"
+            type="date"
+            value={shownDate}
+            disabled={!current.available}
+            onChange={(e) => {
+              setDate(e.target.value)
+              setStatus('idle')
+            }}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">AI answers in</span>
+          <select
+            className="field"
+            value={shownLanguage}
+            disabled={!current.available}
+            onChange={(e) => {
+              setLanguage(e.target.value === 'kn' ? 'kn' : 'en')
+              setStatus('idle')
+            }}
+          >
+            <option value="en">English</option>
+            <option value="kn">ಕನ್ನಡ (Kannada)</option>
+          </select>
+        </label>
+      </div>
+      {error && <ErrorNote message={error} />}
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          className="btn-primary py-2! text-sm"
+          disabled={!current.available || status === 'saving'}
+        >
+          {status === 'saving' ? 'Saving…' : 'Save'}
+        </button>
+        {status === 'saved' && <span className="text-sm text-green">Saved</span>}
+      </div>
+    </form>
   )
 }

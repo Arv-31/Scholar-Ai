@@ -10,6 +10,9 @@ import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
 import { getExam, getMyUnitProgress, getSyllabus } from '../services/examService'
 import { getMastery } from '../services/masteryService'
+import { getStudyPrefs } from '../services/profileService'
+import { daysUntil, unitsPerDay } from '../lib/countdown'
+import { localDay } from '../lib/dates'
 import type { UnitProgress } from '../types/database'
 
 // Exam Mode home: choose an exam, then see its subjects and units with progress.
@@ -53,20 +56,22 @@ export default function ExamHome() {
 
 function Syllabus({ examId, onChangeExam }: { examId: string; onChangeExam: () => void }) {
   const page = useLoad(async () => {
-    const [exam, subjects, progress, mastery] = await Promise.all([
+    const [exam, subjects, progress, mastery, prefs] = await Promise.all([
       getExam(examId),
       getSyllabus(examId),
       getMyUnitProgress(),
       getMastery(),
+      getStudyPrefs(),
     ])
-    return { exam, subjects, progress, mastery }
+    return { exam, subjects, progress, mastery, prefs }
   }, examId)
 
   if (page.loading) return <Loading />
   if (page.error || !page.data)
     return <ErrorNote message={page.error ?? 'Not found'} onRetry={page.reload} />
 
-  const { exam, subjects, progress, mastery } = page.data
+  const { exam, subjects, progress, mastery, prefs } = page.data
+  const daysLeft = prefs.exam_date ? daysUntil(localDay(), prefs.exam_date) : null
   const units = subjects.flatMap((s) => s.units)
   const completed = units.filter((u) => progress[u.id]?.completed).length
   const percent = units.length ? (completed / units.length) * 100 : 0
@@ -94,9 +99,28 @@ function Syllabus({ examId, onChangeExam }: { examId: string; onChangeExam: () =
                 <span className="text-2xl text-white/40"> / {units.length} units</span>
               </p>
             </div>
-            <p className="max-w-xs text-sm text-white/60">
-              A unit is complete when you score 60% or more in any of its quiz rounds.
-            </p>
+            {daysLeft !== null && daysLeft >= 0 ? (
+              <div className="sm:text-right">
+                <p className="eyebrow text-white/50!">Exam countdown</p>
+                <p className="nums mt-2 font-display text-5xl text-ember">
+                  {daysLeft}
+                  <span className="text-2xl text-white/40"> days left</span>
+                </p>
+                <p className="mt-1 text-sm text-white/60">
+                  {completed >= units.length
+                    ? 'Every unit done. Keep revising.'
+                    : `Aim for ${unitsPerDay(units.length - completed, daysLeft)} unit${unitsPerDay(units.length - completed, daysLeft) === 1 ? '' : 's'} a day to finish in time.`}
+                </p>
+              </div>
+            ) : (
+              <p className="max-w-xs text-sm text-white/60">
+                A unit is complete when you score 60% or more in any of its quiz rounds.{' '}
+                <Link to="/settings" className="underline underline-offset-4">
+                  Set your exam date
+                </Link>{' '}
+                for a countdown.
+              </p>
+            )}
           </div>
           <div className="relative mt-6">
             <ProgressBar value={percent} tone="light" label="Units completed" />
