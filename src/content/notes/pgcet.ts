@@ -1,5 +1,10 @@
 import type { ExamNotes } from '../types'
+import computer from './pgcet/computer'
+import english from './pgcet/english'
+import quant from './pgcet/quant'
+import reasoning from './pgcet/reasoning'
 
-const notes: ExamNotes = {}
+// All PGCET-MCA notes, keyed by "Unit|Subtopic".
+const pgcet: ExamNotes = { ...english, ...quant, ...reasoning, ...computer }
 
-export default notes
+export default pgcet

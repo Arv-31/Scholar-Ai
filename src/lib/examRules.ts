@@ -2,7 +2,8 @@
 // The real exams are longer, so the mock is a shorter version with the SAME marking per question
 // and the same time per question. Check the numbers against the latest official notice.
 //   NIMCET: Maths +12/−3, Analytical & Computer +6/−1.5, English +4/−1 (120 questions, 120 min)
-//   Karnataka PGCET-MCA: +1 per right answer, no negative marking (100 questions, 120 min)
+//   Karnataka PGCET-MCA: 80 questions (60 × 1 mark + 20 × 2 marks), no negative marking, 120 min.
+//     The mock uses the 1-mark Part A style for every question.
 //   MBA entrances: commonly +1/−0.25 (varies by exam)
 
 export type Section = { subject: string; count: number; right: number; wrong: number }

@@ -1,5 +1,10 @@
 import type { ExamNotes } from '../types'
+import gk from './mba/gk'
+import logical from './mba/logical'
+import quant from './mba/quant'
+import verbal from './mba/verbal'
 
-const notes: ExamNotes = {}
+// All MBA notes, keyed by "Unit|Subtopic".
+const mba: ExamNotes = { ...quant, ...verbal, ...logical, ...gk }
 
-export default notes
+export default mba
