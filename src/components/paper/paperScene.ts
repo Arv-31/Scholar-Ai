@@ -19,8 +19,8 @@ type Options = { progress: number; reducedMotion: boolean }
 
 const SHEET_H = 2
 const SHEET_W = SHEET_H * 1.4
-const SEG_X = 96 // fewer, bigger facets read as paper rather than rock
-const SEG_Y = 68
+const SEG_X = 150 // fine enough for crisp fold lines
+const SEG_Y = 106
 const BALL_RADIUS = 0.46 // size of the ball the sheet wraps around at 0%
 
 export function createPaperScene(container: HTMLElement, options: Options): PaperHandle {
@@ -30,6 +30,8 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.outputColorSpace = THREE.SRGBColorSpace
+  renderer.toneMapping = THREE.ACESFilmicToneMapping // softer, film-like highlights
+  renderer.toneMappingExposure = 1.4
   const canvas = renderer.domElement
   canvas.style.cssText = 'display:block;width:100%;height:100%;cursor:grab;touch-action:pan-y'
   canvas.setAttribute('aria-hidden', 'true')
@@ -46,6 +48,20 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
   const fill = new THREE.DirectionalLight(0xc9d6ff, 0.5) // weaker cool fill
   fill.position.set(-4, -1.5, 2)
   scene.add(fill)
+  const rim = new THREE.DirectionalLight(0xfff2dd, 0.9) // faint backlight that outlines the edges
+  rim.position.set(-1, 2.5, -4)
+  scene.add(rim)
+
+  // soft shadow on the card behind the paper (it does not turn with the paper)
+  const shadowMaterial = new THREE.MeshBasicMaterial({
+    map: shadowTexture(),
+    transparent: true,
+    depthWrite: false,
+    toneMapped: false, // keep the shadow as dark as we set it
+  })
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), shadowMaterial)
+  shadow.position.set(0.3, -0.34, -1.4) // further back, so it is drawn larger (see scale below)
+  scene.add(shadow)
 
   // ---------- the sheet ----------
   const geometry = new THREE.PlaneGeometry(SHEET_W, SHEET_H, SEG_X, SEG_Y)
@@ -57,7 +73,7 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
   const wrinkle = new Float32Array(count) // faint wrinkle that stays at 100%
 
   // Straight fold lines across the sheet, each one a sharp V-shaped crease (like real crumpled paper)
-  const folds = makeFolds(26)
+  const folds = makeFolds(40)
   let sum = 0
   for (let i = 0; i < count; i++) {
     const x = position.getX(i)
@@ -70,7 +86,7 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
       const d = Math.abs(x * fold.nx + y * fold.ny - fold.c)
       if (d < fold.w) v += fold.a * (1 - d / fold.w)
     }
-    crease[i] = v + (ridged(x * 2.4 + 5, y * 2.4 + 9, 2.5) - 0.5) * 0.9
+    crease[i] = v + (ridged(x * 2.6 + 5, y * 2.6 + 9, 2.5) - 0.5) * 0.55
     sum += crease[i]
     wrinkle[i] = (valueNoise(x * 9, y * 9, 1.3) - 0.5) * 0.01
   }
@@ -80,14 +96,22 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
   for (let i = 0; i < count; i++) peak = Math.max(peak, Math.abs(crease[i] - mean))
   for (let i = 0; i < count; i++) crease[i] = ((crease[i] - mean) / peak) * 0.5
 
+  // per-point colour: valleys of the creases are a little darker (like real shadowed folds)
+  const colors = new Float32Array(count * 3)
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  const tone = new Float32Array(count) // tiny random tone change per area of the sheet
+  for (let i = 0; i < count; i++)
+    tone[i] = (valueNoise(baseX[i] * 3, baseY[i] * 3, 4.2) - 0.5) * 0.06
+
   const material = new THREE.MeshStandardMaterial({
     color: 0xfbf9f3,
+    vertexColors: true,
     roughness: 0.92,
     metalness: 0,
     side: THREE.DoubleSide,
     flatShading: true, // keeps every crease facet visible
-    bumpMap: grainTexture(),
-    bumpScale: 0.25,
+    bumpMap: fibreTexture(),
+    bumpScale: 0.35,
   })
   const mesh = new THREE.Mesh(geometry, material)
   const holder = new THREE.Group() // drag rotates this group
@@ -113,7 +137,29 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
       array[i * 3 + 1] = ny * (wrap + push)
       array[i * 3 + 2] = nz * (wrap + push) - centre
     }
-    mesh.scale.setScalar(1.5 - 0.5 * smoothstep(0, 0.65, p)) // the crushed ball shows bigger
+    // darken the folds while crushed; the shading fades as the sheet flattens
+    const colorArray = geometry.attributes.color.array as Float32Array
+    const shade = Math.pow(1 - p, 0.8)
+    for (let i = 0; i < count; i++) {
+      const valley = Math.max(0, -crease[i]) * 2 // 0 on ridges, up to 1 deep in a fold
+      const c = 1 - shade * (valley * 0.32 + 0.04) + tone[i] * shade
+      colorArray[i * 3] = c
+      colorArray[i * 3 + 1] = c * 0.995
+      colorArray[i * 3 + 2] = c * 0.98
+    }
+    geometry.attributes.color.needsUpdate = true
+
+    const scale = 1.5 - 0.5 * smoothstep(0, 0.65, p) // the crushed ball shows bigger
+    mesh.scale.setScalar(scale)
+    // the shadow grows from a round blob (ball) to the sheet's shape (flat)
+    const flat = smoothstep(0.3, 1, p)
+    const grow = 2.3 * scale // makes up for the shadow sitting further from the camera
+    shadow.scale.set(
+      (0.95 + (SHEET_W - 0.95) * flat) * grow * 0.75,
+      (0.9 + (SHEET_H - 0.9) * flat) * grow * 0.75,
+      1,
+    )
+    shadowMaterial.opacity = 0.22 - 0.06 * flat
     position.needsUpdate = true
     geometry.computeVertexNormals()
     geometry.computeBoundingSphere()
@@ -240,7 +286,13 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
     // resting pose: crumpled ball sits at an angle, the flat sheet faces you
     rest.slerpQuaternions(restCrumpled, restFlat, smoothstep(0.55, 1, shown))
     const swayAmount = reduced ? 0 : 0.06 * (1 - shown * 0.7)
-    sway.setFromEuler(new THREE.Euler(Math.sin(clock * 0.5) * swayAmount, Math.sin(clock * 0.37) * swayAmount * 1.4, 0))
+    sway.setFromEuler(
+      new THREE.Euler(
+        Math.sin(clock * 0.5) * swayAmount,
+        Math.sin(clock * 0.37) * swayAmount * 1.4,
+        0,
+      ),
+    )
     const tilt = dragging || reduced ? 0 : 0.14
     hover.setFromEuler(new THREE.Euler(hoverY * tilt, hoverX * tilt, 0))
     holder.quaternion.copy(dragTurn).multiply(hover).multiply(rest).multiply(sway)
@@ -268,6 +320,9 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
       canvas.removeEventListener('pointerleave', onLeave)
       geometry.dispose()
       material.bumpMap?.dispose()
+      shadow.geometry.dispose()
+      shadowMaterial.map?.dispose()
+      shadowMaterial.dispose()
       material.dispose()
       renderer.dispose()
       canvas.remove()
@@ -338,26 +393,54 @@ function makeFolds(n: number) {
       ny: Math.sin(angle),
       c: (random() - 0.5) * 2.4,
       a: (random() < 0.5 ? -1 : 1) * (0.5 + random() * 0.5),
-      w: 0.12 + random() * 0.22, // half-width of the ridge
+      w: 0.05 + random() * 0.12, // half-width of the ridge: narrow = crisp fold
     }
   })
 }
 
-// Fine paper grain for the bump map
-function grainTexture() {
-  const size = 256
+// Paper surface for the bump map: fine grain plus short random fibres
+function fibreTexture() {
+  const size = 512
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
   const ctx = canvas.getContext('2d')!
   const image = ctx.createImageData(size, size)
   for (let i = 0; i < size * size; i++) {
-    const g = 110 + Math.random() * 60
+    const g = 128 + (Math.random() - 0.5) * 40
     image.data[i * 4] = image.data[i * 4 + 1] = image.data[i * 4 + 2] = g
     image.data[i * 4 + 3] = 255
   }
   ctx.putImageData(image, 0, 0)
+  ctx.lineCap = 'round'
+  for (let i = 0; i < 1400; i++) {
+    const x = Math.random() * size
+    const y = Math.random() * size
+    const angle = Math.random() * Math.PI
+    const length = 4 + Math.random() * 14
+    ctx.strokeStyle = Math.random() < 0.5 ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.22)'
+    ctx.lineWidth = 0.6 + Math.random() * 0.8
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length)
+    ctx.stroke()
+  }
   const texture = new THREE.CanvasTexture(canvas)
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping
-  texture.repeat.set(3, 3)
+  texture.repeat.set(2, 2)
   return texture
+}
+
+// Soft dark blob used as the shadow behind the paper
+function shadowTexture() {
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  gradient.addColorStop(0, 'rgba(20,22,26,1)')
+  gradient.addColorStop(0.55, 'rgba(20,22,26,0.55)')
+  gradient.addColorStop(1, 'rgba(20,22,26,0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+  return new THREE.CanvasTexture(canvas)
 }
