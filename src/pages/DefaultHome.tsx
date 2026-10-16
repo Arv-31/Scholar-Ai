@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import Reveal from '../components/Reveal'
@@ -10,6 +10,7 @@ import { localDay } from '../lib/dates'
 import { greeting } from '../lib/greeting'
 import { liveStreak } from '../lib/streak'
 import { getTodaysBooks } from '../services/aiService'
+import { getBookCover } from '../services/bookCoverService'
 import { completeChallenge, getTodaysChallenges } from '../services/challengeService'
 import { errorMessage } from '../services/functionsClient'
 import type { DailyBook } from '../types/database'
@@ -168,16 +169,30 @@ function sortBooks(books: DailyBook[]): DailyBook[] {
 }
 
 function BookCard({ book }: { book: DailyBook }) {
+  const cover = useBookCover(book.title, book.author)
+  const [broken, setBroken] = useState(false)
+  const showCover = cover && !broken
+
   return (
     <article className="card flex gap-4 p-5">
-      <div
-        aria-hidden="true"
-        className={`grid h-28 w-20 shrink-0 place-items-center border border-ink font-display text-3xl text-on-accent shadow-[3px_3px_0_var(--color-ink)] ${
-          book.kind === 'fiction' ? 'bg-ember' : 'bg-green'
-        }`}
-      >
-        {book.title.charAt(0)}
-      </div>
+      {showCover ? (
+        <img
+          src={cover}
+          alt={`Cover of ${book.title}`}
+          loading="lazy"
+          onError={() => setBroken(true)}
+          className="h-32 w-[5.5rem] shrink-0 border border-ink bg-paper object-cover shadow-[3px_3px_0_var(--color-ink)]"
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          className={`grid h-32 w-[5.5rem] shrink-0 place-items-center border border-ink font-display text-3xl text-on-accent shadow-[3px_3px_0_var(--color-ink)] ${
+            book.kind === 'fiction' ? 'bg-ember' : 'bg-green'
+          }`}
+        >
+          {book.title.charAt(0)}
+        </div>
+      )}
       <div className="min-w-0">
         <p className="eyebrow">{book.kind === 'fiction' ? 'Fiction' : 'Non-fiction'}</p>
         <h3 className="mt-1 text-lg leading-snug font-semibold">{book.title}</h3>
@@ -186,4 +201,18 @@ function BookCard({ book }: { book: DailyBook }) {
       </div>
     </article>
   )
+}
+
+// Looks up the real cover; null while loading or if there is none (the letter shows instead).
+function useBookCover(title: string, author: string): string | null {
+  const [cover, setCover] = useState<{ key: string; url: string | null } | null>(null)
+  const key = `${title}|${author}`
+  useEffect(() => {
+    let active = true
+    getBookCover(title, author).then((url) => active && setCover({ key, url }))
+    return () => {
+      active = false
+    }
+  }, [title, author, key])
+  return cover?.key === key ? cover.url : null
 }
