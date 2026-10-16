@@ -80,10 +80,13 @@ export default function AppShell() {
   }
 
   // The theme in index.css follows this: <html data-mode="exam"> = blackboard, "default" = paper.
+  // The phone's status bar (installed app / mobile Chrome) takes the page colour too.
   useEffect(() => {
     document.documentElement.dataset.mode = mode
+    setThemeColor(mode === 'exam' ? '#1a1f1c' : '#f3efe4')
     return () => {
       document.documentElement.dataset.mode = 'default' // back to paper on the login page
+      setThemeColor('#060a16') // the login page's night sky
     }
   }, [mode])
 
@@ -134,7 +137,7 @@ export default function AppShell() {
 
         <div className="flex min-w-0 flex-col">
           {/* Mobile top bar */}
-          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink bg-paper px-4 py-3 lg:hidden print:hidden">
+          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink bg-paper px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden print:hidden">
             <Logo />
             <ModeToggle mode={mode} onChange={handleModeChange} />
           </header>
@@ -148,7 +151,7 @@ export default function AppShell() {
             </p>
           )}
 
-          <main className="w-full max-w-5xl px-4 pt-6 pb-28 sm:px-8 lg:px-12 lg:py-10">
+          <main className="w-full max-w-5xl px-4 pt-6 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-8 lg:px-12 lg:py-10">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname}
@@ -164,7 +167,7 @@ export default function AppShell() {
         </div>
 
         {/* Mobile floating bottom menu */}
-        <nav className="fixed inset-x-3 bottom-3 z-10 flex print:hidden justify-around gap-1 rounded-md border border-ink bg-board p-1.5 shadow-[3px_3px_0_var(--color-ink)] lg:hidden">
+        <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-10 flex print:hidden justify-around gap-1 rounded-md border border-ink bg-board p-1.5 shadow-[3px_3px_0_var(--color-ink)] lg:hidden">
           {NAV[mode]
             .filter((item) => !item.wide)
             .map((item) => {
@@ -186,4 +189,8 @@ export default function AppShell() {
       </div>
     </MotionConfig>
   )
+}
+
+function setThemeColor(color: string) {
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
 }

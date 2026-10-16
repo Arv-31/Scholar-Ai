@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import InstallApp from '../components/InstallApp'
 import PageHeader from '../components/PageHeader'
 import { ErrorNote } from '../components/StateNote'
 import { useAuth } from '../hooks/useAuth'
@@ -15,7 +16,7 @@ import {
   updateStudyPrefs,
 } from '../services/profileService'
 
-// Account settings: name, exam, exam date + answer language, own Gemini key, sign out.
+// Account settings: name, exam, exam date + answer language, own Gemini key, install app, sign out.
 export default function SettingsPage() {
   const { user } = useAuth()
   const { profile, refreshProfile } = useShell()
@@ -35,6 +36,8 @@ export default function SettingsPage() {
           <GeminiKeyCard hint={profile.gemini_key_hint} onChanged={refreshProfile} />
         </>
       )}
+
+      <InstallApp />
 
       <section className="card flex flex-wrap items-center justify-between gap-4 p-6">
         <div>
