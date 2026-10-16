@@ -20,7 +20,16 @@ const QuizInput = z.object({ task: z.literal('quiz'), unitId: z.uuid() })
 
 const BooksInput = z.object({ task: z.literal('books'), day: z.iso.date() })
 
-const Input = z.discriminatedUnion('task', [ChatInput, QuizInput, BooksInput])
+// "Why was I wrong?": explain one wrong quiz answer.
+const ExplainInput = z.object({
+  task: z.literal('explain'),
+  question: z.string().min(1).max(1000),
+  options: z.array(z.string().max(300)).length(4),
+  chosen: z.number().int().min(0).max(3),
+  correct: z.number().int().min(0).max(3),
+})
+
+const Input = z.discriminatedUnion('task', [ChatInput, QuizInput, BooksInput, ExplainInput])
 
 const QuizOutput = z.object({
   questions: z
@@ -56,6 +65,7 @@ Deno.serve(async (req) => {
   try {
     if (input.task === 'chat') return json(await chat(user.id, input))
     if (input.task === 'quiz') return json(await quiz(user.id, input.unitId))
+    if (input.task === 'explain') return json(await explain(user.id, input))
     return json(await books(user.id, input.day))
   } catch (error) {
     if (error instanceof NoKeyError) {
@@ -86,10 +96,46 @@ async function chat(userId: string, input: z.infer<typeof ChatInput>) {
     'For maths, show the working. If a question is not about studies, gently steer back to exam prep.',
     'Write plain text: no markdown symbols such as ** or #. Use simple numbered lines for steps.',
     input.context ? `The student is currently studying: ${input.context}.` : '',
+    await languageLine(userId),
   ].join(' ')
 
   const reply = await callAi({ task: 'chat', userId, system, messages: input.messages })
   return { reply }
+}
+
+// The student's chosen answer language (Settings). English unless they picked Kannada.
+// Before the profile setting exists the query fails quietly and we stay in English.
+async function languageLine(userId: string): Promise<string> {
+  const { data, error } = await admin
+    .from('profiles')
+    .select('language')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error || data?.language !== 'kn') return ''
+  return 'Reply in simple, clear Kannada (Kannada script). Keep maths, formulas and technical terms as they are.'
+}
+
+// ---------- "Why was I wrong?" ----------
+async function explain(userId: string, input: z.infer<typeof ExplainInput>) {
+  const letters = ['A', 'B', 'C', 'D']
+  const system = [
+    'You are a patient tutor for Indian MCA/MBA entrance exams.',
+    "In at most 3 short lines of plain text (no markdown): say why the student's choice is wrong,",
+    'why the correct answer is right, and one tip to avoid this mistake next time.',
+    await languageLine(userId),
+  ].join(' ')
+  const prompt = [
+    `Question: ${input.question}`,
+    ...input.options.map((o, i) => `${letters[i]}. ${o}`),
+    `Student chose: ${letters[input.chosen]}. Correct answer: ${letters[input.correct]}.`,
+  ].join('\n')
+  const reply = await callAi({
+    task: 'explain',
+    userId,
+    system,
+    messages: [{ role: 'user', content: prompt }],
+  })
+  return { explanation: reply.trim() }
 }
 
 // ---------- Round 3: live quiz on weak topics ----------

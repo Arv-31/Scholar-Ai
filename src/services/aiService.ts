@@ -30,3 +30,20 @@ export async function getTodaysBooks(day: string): Promise<DailyBook[]> {
   const result = await callFunction('ai', { task: 'books', day }, BooksResponse)
   return result.books
 }
+
+const ExplainResponse = z.object({ explanation: z.string() })
+
+// "Why was I wrong?": a short personal explanation of one wrong answer (student's Gemini key).
+export async function explainMistake(
+  question: string,
+  options: string[],
+  chosen: number,
+  correct: number,
+): Promise<string> {
+  const result = await callFunction(
+    'ai',
+    { task: 'explain', question, options, chosen, correct },
+    ExplainResponse,
+  )
+  return result.explanation
+}

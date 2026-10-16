@@ -1,9 +1,10 @@
 // THE one place that decides which AI answers which task.
-// Chatbot: Claude (project key), quiz round 3 + books: Gemini (student's own key).
+// Everything runs on Gemini (the student's own key). The chatbot moves to Claude by itself only
+// if an ANTHROPIC_API_KEY secret is ever added.
 // No page or service changes are needed to move a task to another provider.
 
 export type Provider = 'gemini' | 'claude'
-export type AiTask = 'chat' | 'quiz' | 'books'
+export type AiTask = 'chat' | 'quiz' | 'books' | 'explain'
 
 // Gemini model name. Change it without a code release:
 //   supabase secrets set GEMINI_MODEL=<model name>
@@ -31,4 +32,5 @@ export const AI_ROUTES: Record<AiTask, Route> = {
   chat: chatRoute,
   quiz: { provider: 'gemini', model: GEMINI_MODEL, fallbacks: GEMINI_FALLBACK_MODELS },
   books: { provider: 'gemini', model: GEMINI_MODEL, fallbacks: GEMINI_FALLBACK_MODELS },
+  explain: { provider: 'gemini', model: GEMINI_MODEL, fallbacks: GEMINI_FALLBACK_MODELS },
 }
