@@ -12,17 +12,19 @@ import ModeToggle from './ModeToggle'
 import { Loading } from './StateNote'
 
 // Menu items for each mode.
-const NAV: Record<Mode, { to: string; label: string }[]> = {
+const NAV: Record<Mode, { to: string; label: string; short: string }[]> = {
   default: [
-    { to: '/default', label: 'Today' },
-    { to: '/progress', label: 'Progress' },
-    { to: '/settings', label: 'Settings' },
+    { to: '/default', label: 'Today', short: 'Today' },
+    { to: '/progress', label: 'Progress', short: 'Progress' },
+    { to: '/settings', label: 'Settings', short: 'Settings' },
   ],
   exam: [
-    { to: '/exam', label: 'Subjects' },
-    { to: '/exam/chat', label: 'Ask AI' },
-    { to: '/progress', label: 'Progress' },
-    { to: '/settings', label: 'Settings' },
+    { to: '/exam', label: 'Subjects', short: 'Units' },
+    { to: '/exam/mock', label: 'Mock test', short: 'Mock' },
+    { to: '/exam/mistakes', label: 'Mistakes', short: 'Mistakes' },
+    { to: '/exam/chat', label: 'Ask AI', short: 'Ask AI' },
+    { to: '/progress', label: 'Progress', short: 'Progress' },
+    { to: '/settings', label: 'Settings', short: 'Settings' },
   ],
 }
 
@@ -157,11 +159,11 @@ export default function AppShell() {
                 key={item.to}
                 to={item.to}
                 aria-current={active ? 'page' : undefined}
-                className={`flex-1 rounded-sm py-2.5 text-center text-sm font-medium transition ${
+                className={`min-w-0 flex-1 truncate rounded-sm px-0.5 py-2.5 text-center text-[11px] font-medium transition sm:text-sm ${
                   active ? `${accent} text-on-accent` : 'text-white/60'
                 }`}
               >
-                {item.label}
+                {item.short}
               </Link>
             )
           })}

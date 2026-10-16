@@ -15,6 +15,8 @@ const QuizPage = lazy(() => import('./pages/QuizPage'))
 const ChatPage = lazy(() => import('./pages/ChatPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const MistakesPage = lazy(() => import('./pages/MistakesPage'))
+const MockTestPage = lazy(() => import('./pages/MockTestPage'))
 
 // Browser tab title for each page, e.g. "Quiz · ScholarAI".
 const TITLES: [RegExp, string][] = [
@@ -24,6 +26,8 @@ const TITLES: [RegExp, string][] = [
   [/^\/exam\/unit\/[^/]+\/quiz/, 'Quiz'],
   [/^\/exam\/unit/, 'Unit'],
   [/^\/exam\/chat/, 'Ask AI'],
+  [/^\/exam\/mistakes/, 'Mistakes'],
+  [/^\/exam\/mock/, 'Mock test'],
   [/^\/exam/, 'Subjects'],
   [/^\/progress/, 'Progress'],
   [/^\/settings/, 'Settings'],
@@ -60,6 +64,8 @@ export default function App() {
               <Route path="/exam/unit/:unitId" element={<UnitPage />} />
               <Route path="/exam/unit/:unitId/quiz/:round" element={<QuizPage />} />
               <Route path="/exam/chat" element={<ChatPage />} />
+              <Route path="/exam/mistakes" element={<MistakesPage />} />
+              <Route path="/exam/mock" element={<MockTestPage />} />
 
               {/* Shared */}
               <Route path="/progress" element={<ProgressPage />} />

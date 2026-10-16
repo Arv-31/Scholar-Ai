@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import ProgressBar from '../components/ProgressBar'
+import WhyWrong from '../components/WhyWrong'
 import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
 import { useLoad } from '../hooks/useLoad'
 import { PASS_PERCENT, scoreQuiz, type QuizQuestion } from '../lib/quiz'
 import { getUnit } from '../services/examService'
-import { explainMistake } from '../services/aiService'
-import { AppError, errorMessage } from '../services/functionsClient'
+import { errorMessage } from '../services/functionsClient'
 import { getQuestions, getQuickCheck, getSubtopics, saveAttempt } from '../services/quizService'
 import type { Round, Subtopic } from '../types/database'
 
@@ -267,60 +267,5 @@ function Quiz({
         </button>
       </div>
     </div>
-  )
-}
-
-// "Why was I wrong?": one tap asks Gemini (the student's own key) for a short, personal explanation.
-function WhyWrong({ question, chosen }: { question: QuizQuestion; chosen: number }) {
-  const [state, setState] = useState<
-    | { kind: 'idle' }
-    | { kind: 'loading' }
-    | { kind: 'done'; text: string }
-    | { kind: 'error'; code: string; text: string }
-  >({ kind: 'idle' })
-
-  async function ask() {
-    setState({ kind: 'loading' })
-    try {
-      const text = await explainMistake(
-        question.question,
-        question.options,
-        chosen,
-        question.correctIndex,
-      )
-      setState({ kind: 'done', text })
-    } catch (err) {
-      setState({
-        kind: 'error',
-        code: err instanceof AppError ? err.code : 'ERROR',
-        text: errorMessage(err),
-      })
-    }
-  }
-
-  if (state.kind === 'idle') {
-    return (
-      <button type="button" className="btn-ghost mt-3 text-xs!" onClick={() => void ask()}>
-        Why was I wrong?
-      </button>
-    )
-  }
-  if (state.kind === 'loading') return <p className="mt-3 text-sm text-muted">Thinking…</p>
-  if (state.kind === 'error') {
-    return (
-      <p role="alert" className="mt-3 text-sm text-danger">
-        {state.text}{' '}
-        {state.code === 'NO_KEY' && (
-          <Link to="/settings" className="font-medium underline">
-            Open Settings
-          </Link>
-        )}
-      </p>
-    )
-  }
-  return (
-    <p className="mt-3 border-l-4 border-green pl-3 text-sm leading-relaxed whitespace-pre-line">
-      {state.text}
-    </p>
   )
 }
