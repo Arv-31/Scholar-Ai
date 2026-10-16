@@ -64,7 +64,17 @@ Deno.serve(async (req) => {
   }).toString()
 
   const res = await fetch(url)
-  if (!res.ok) return fail('YOUTUBE_FAILED', 'Could not load videos right now.', 502)
+  if (!res.ok) {
+    // Log YouTube's real reason (e.g. quotaExceeded, keyInvalid). It never contains the key.
+    const problem = await res.json().catch(() => null)
+    const reason = problem?.error?.errors?.[0]?.reason ?? '-'
+    console.error('youtube error:', res.status, reason, problem?.error?.message ?? '')
+    const message =
+      reason === 'quotaExceeded'
+        ? "Today's video search limit is used up. Videos will load tomorrow."
+        : 'Could not load videos right now.'
+    return fail('YOUTUBE_FAILED', message, 502)
+  }
   const body = (await res.json()) as { items?: SearchItem[] }
 
   const rows = (body.items ?? [])

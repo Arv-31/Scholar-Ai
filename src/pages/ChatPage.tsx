@@ -19,7 +19,7 @@ export default function ChatPage() {
   const unit = useLoad(() => (unitId ? getUnit(unitId) : Promise.resolve(null)), unitId ?? '')
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [draft, setDraft] = useState('')
+  const [draft, setDraft] = useState(params.get('q') ?? '') // the unit page can pre-fill a question
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<{ code: string; message: string } | null>(null)
   const endRef = useRef<HTMLDivElement>(null)

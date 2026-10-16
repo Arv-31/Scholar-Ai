@@ -176,7 +176,7 @@ function GeminiKeyCard({ hint, onChanged }: { hint: string | null; onChanged: ()
           </p>
         </div>
         <span
-          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${hint ? 'bg-green-soft text-green' : 'bg-paper text-muted'}`}
+          className={`border border-ink px-2.5 py-1 text-xs font-semibold ${hint ? 'bg-green text-on-accent' : 'bg-paper text-muted'}`}
         >
           {hint ? 'Connected' : 'Not set'}
         </span>

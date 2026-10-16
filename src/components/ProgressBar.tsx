@@ -4,10 +4,10 @@ type Props = {
   label: string // read out by screen readers
 }
 
-const FILL = { green: 'bg-green', ember: 'bg-ember', light: 'bg-white' }
-const TRACK = { green: 'bg-line', ember: 'bg-line', light: 'bg-white/15' }
+const FILL = { green: 'bg-green', ember: 'bg-ember', light: 'bg-[#edebe3]' }
+const RULE = { green: 'bg-ink/25', ember: 'bg-ink/25', light: 'bg-white/25' }
 
-// Thin rounded bar used for unit, subject and video progress.
+// A thin ruled line with a filled segment (like a ruler), used for unit, subject and video progress.
 export default function ProgressBar({ value, tone = 'green', label }: Props) {
   const clamped = Math.max(0, Math.min(100, value))
   return (
@@ -17,10 +17,11 @@ export default function ProgressBar({ value, tone = 'green', label }: Props) {
       aria-valuenow={Math.round(clamped)}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={`h-1.5 w-full overflow-hidden rounded-full ${TRACK[tone]}`}
+      className="relative h-[3px] w-full"
     >
+      <div className={`absolute inset-x-0 top-1/2 h-px -translate-y-1/2 ${RULE[tone]}`} />
       <div
-        className={`h-full rounded-full transition-[width] duration-500 ${FILL[tone]}`}
+        className={`relative h-full transition-[width] duration-500 ${FILL[tone]}`}
         style={{ width: `${clamped}%` }}
       />
     </div>

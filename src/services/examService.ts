@@ -73,3 +73,14 @@ export async function getMyUnitProgress(): Promise<Record<string, UnitProgress>>
   }
   return byUnit
 }
+
+// The units of one subject in syllabus order (for "previous / next unit" links).
+export async function getSubjectUnits(subjectId: string): Promise<Unit[]> {
+  const { data, error } = await supabase
+    .from('units')
+    .select('id, subject_id, name, sort_order')
+    .eq('subject_id', subjectId)
+    .order('sort_order')
+  if (error) throw new Error('Could not load the units.')
+  return data as Unit[]
+}

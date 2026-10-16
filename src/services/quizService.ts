@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
 import { scoreQuiz, toAnswerRecords, type QuizQuestion } from '../lib/quiz'
-import type { QuizAttempt, Round } from '../types/database'
+import type { AnswerRecord, QuizAttempt, Round } from '../types/database'
 import { callFunction } from './functionsClient'
 
 // Rounds 1 and 2: the 5 saved questions for this unit.
@@ -83,4 +83,29 @@ export async function listMyAttempts(options: { unitId?: string; limit?: number 
       unit_name: units?.name ?? 'Unit',
     }),
   )
+}
+
+export type WeakSpot = { question: string; answer: string }
+
+// Questions the student got wrong in their latest rounds 1-2 attempts for a unit (newest first).
+export async function getWeakSpots(unitId: string, limit = 5): Promise<WeakSpot[]> {
+  const { data, error } = await supabase
+    .from('quiz_attempts')
+    .select('answers')
+    .eq('unit_id', unitId)
+    .in('round', [1, 2])
+    .order('created_at', { ascending: false })
+    .limit(6)
+  if (error) throw new Error('Could not load your weak spots.')
+
+  const seen = new Set<string>()
+  const spots: WeakSpot[] = []
+  for (const attempt of (data ?? []) as { answers: AnswerRecord[] | null }[]) {
+    for (const a of attempt.answers ?? []) {
+      if (a.chosen === a.correct || seen.has(a.question)) continue
+      seen.add(a.question)
+      spots.push({ question: a.question, answer: a.options[a.correct] ?? '' })
+    }
+  }
+  return spots.slice(0, limit)
 }

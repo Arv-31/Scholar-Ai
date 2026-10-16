@@ -49,3 +49,19 @@ export async function saveWatch(videoId: string, percent: number): Promise<void>
     { onConflict: 'user_id,video_id' },
   )
 }
+
+// Watch % for every saved video, grouped by unit: { unitId: [40, 100, 0] }.
+// Units without saved videos are left out.
+export async function getMyWatchByUnit(): Promise<Record<string, number[]>> {
+  const [{ data: videos }, watch] = await Promise.all([
+    supabase.from('unit_videos').select('id, unit_id'),
+    getMyWatch(),
+  ])
+  const byUnit: Record<string, number[]> = {}
+  for (const video of (videos ?? []) as { id: string; unit_id: string }[]) {
+    const list = byUnit[video.unit_id] ?? []
+    list.push(watch[video.id] ?? 0)
+    byUnit[video.unit_id] = list
+  }
+  return byUnit
+}

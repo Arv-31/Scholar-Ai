@@ -6,6 +6,7 @@ import type { ShellContext } from '../hooks/useShell'
 import { signOut } from '../services/authService'
 import { getMyProfile, updateMyMode } from '../services/profileService'
 import type { Mode, Profile } from '../types/database'
+import LandingReveal from './login/LandingReveal'
 import Logo from './Logo'
 import ModeToggle from './ModeToggle'
 
@@ -87,6 +88,7 @@ export default function AppShell() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <LandingReveal />
       <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">
         {/* Desktop sidebar */}
         <aside className="sticky top-0 hidden h-screen flex-col border-r border-ink bg-surface px-5 py-6 lg:flex">

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
+import Reveal from '../components/Reveal'
 import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
+import Tally from '../components/Tally'
 import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
 import { localDay } from '../lib/dates'
@@ -45,104 +47,117 @@ export default function DefaultHome() {
     <div className="space-y-8">
       <PageHeader eyebrow="Default mode · Today" title={`${greeting()}, ${displayName}`} />
 
-      {/* Streak */}
-      <section className="panel p-6 sm:p-8">
-        <div aria-hidden="true" className="grid-lines absolute inset-0 opacity-[0.06]" />
-        <div
-          aria-hidden="true"
-          className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-ember/30 blur-3xl"
-        />
-        <div className="relative flex flex-wrap items-center gap-6">
-          <StreakRing value={streak} doneToday={doneCount} />
-          <div className="min-w-0 flex-1">
-            <p className="eyebrow text-white/50!">Consistency streak</p>
-            <p className="mt-1 font-display text-2xl">
-              {streak === 0 ? 'Start today' : `${streak} day${streak === 1 ? '' : 's'} in a row`}
-            </p>
-            <p className="mt-1 text-sm text-white/60">
-              {dayComplete
-                ? 'Both tasks done. Today counts.'
-                : `Finish both tasks to count today · ${doneCount}/2 done`}
-            </p>
+      {/* Streak: tally marks, one stroke per day; a day counts when both tasks are done */}
+      <Reveal index={0}>
+        <section className="panel p-6 sm:p-8">
+          <div aria-hidden="true" className="grid-lines absolute inset-0 opacity-[0.06]" />
+          <div className="relative grid gap-6 sm:grid-cols-[auto_1fr_auto] sm:items-end">
+            <p className="nums font-display text-7xl leading-none text-ember">{streak}</p>
+            <div className="min-w-0">
+              <p className="eyebrow text-white/50!">Consistency streak</p>
+              <p className="mt-1 font-display text-2xl">
+                {streak === 0 ? 'Start today' : `${streak} day${streak === 1 ? '' : 's'} in a row`}
+              </p>
+              <Tally count={streak} className="mt-3 text-[#edebe3]" />
+            </div>
+            <div className="sm:text-right">
+              <p className="eyebrow text-white/50!">Today · best</p>
+              <p className="nums mt-1 text-lg">
+                {doneCount}/2 · {profile?.best_streak ?? 0}
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="eyebrow text-white/50!">Best</p>
-            <p className="nums mt-1 font-display text-2xl">{profile?.best_streak ?? 0}</p>
-          </div>
-        </div>
-      </section>
+          <p className="relative mt-5 text-sm text-white/60">
+            {dayComplete
+              ? 'Both tasks done. Today counts.'
+              : 'Finish both Comfort Zone tasks to count today.'}
+          </p>
+        </section>
+      </Reveal>
 
       {/* Comfort Zone tasks */}
-      <section>
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-xl font-semibold">Comfort Zone</h2>
-          <span className="eyebrow">2 small tasks</span>
-        </div>
-        {tasks.loading && <Loading />}
-        {tasks.error && <ErrorNote message={tasks.error} onRetry={tasks.reload} />}
-        {saveError && <ErrorNote message={saveError} />}
-        {tasks.data && tasks.data.challenges.length === 0 && (
-          <EmptyState title="No tasks yet" text="The task list is empty. Check back later." />
-        )}
-        {tasks.data && (
-          <div className="grid gap-3 md:grid-cols-2">
-            {tasks.data.challenges.map((challenge, index) => {
-              const done = tasks.data!.doneIds.includes(challenge.id)
-              return (
-                <article
-                  key={challenge.id}
-                  className={`card flex flex-col gap-4 p-5 transition ${done ? 'border-ember/40 bg-ember-soft/60' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="eyebrow">Task {String(index + 1).padStart(2, '0')}</span>
-                    {done && <span className="text-xs font-semibold text-ember">Done ✓</span>}
-                  </div>
-                  <p className="flex-1 leading-relaxed">{challenge.text}</p>
-                  {!done && (
-                    <button
-                      type="button"
-                      className="btn-ember self-start py-2! text-sm"
-                      disabled={saving !== null}
-                      onClick={() => void markDone(challenge.id)}
-                    >
-                      {saving === challenge.id ? 'Saving…' : 'Mark as done'}
-                    </button>
-                  )}
-                </article>
-              )
-            })}
+      <Reveal index={1}>
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-xl font-semibold">Comfort Zone</h2>
+            <span className="eyebrow">2 small tasks</span>
           </div>
-        )}
-      </section>
+          {tasks.loading && <Loading />}
+          {tasks.error && <ErrorNote message={tasks.error} onRetry={tasks.reload} />}
+          {saveError && <ErrorNote message={saveError} />}
+          {tasks.data && tasks.data.challenges.length === 0 && (
+            <EmptyState title="No tasks yet" text="The task list is empty. Check back later." />
+          )}
+          {tasks.data && (
+            <div className="grid gap-4 md:grid-cols-[1.25fr_1fr]">
+              {tasks.data.challenges.map((challenge, index) => {
+                const done = tasks.data!.doneIds.includes(challenge.id)
+                return (
+                  <article
+                    key={challenge.id}
+                    className={`card flex flex-col gap-4 p-5 ${done ? 'bg-ember-soft' : ''}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="eyebrow">Task {String(index + 1).padStart(2, '0')}</span>
+                      {done && (
+                        <span className="nums border border-ink bg-ember px-2 py-0.5 text-xs font-semibold text-on-accent">
+                          Done
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={`flex-1 leading-relaxed ${done ? 'text-muted line-through decoration-ember decoration-2' : ''}`}
+                    >
+                      {challenge.text}
+                    </p>
+                    {!done && (
+                      <button
+                        type="button"
+                        className="btn-ember self-start py-2! text-sm"
+                        disabled={saving !== null}
+                        onClick={() => void markDone(challenge.id)}
+                      >
+                        {saving === challenge.id ? 'Saving…' : 'Mark as done'}
+                      </button>
+                    )}
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      </Reveal>
 
       {/* Books */}
-      <section>
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-xl font-semibold">Today’s reads</h2>
-          <span className="eyebrow">New picks each day</span>
-        </div>
-        {books.loading && <Loading label="Picking today’s books" />}
-        {books.errorCode === 'NO_KEY' ? (
-          <EmptyState
-            title="Add your Gemini key to get book picks"
-            text="Book picks are made with your own free Gemini key. It takes a minute to set up."
-            action={
-              <Link to="/settings" className="btn-ember py-2! text-sm">
-                Go to Settings
-              </Link>
-            }
-          />
-        ) : (
-          books.error && <ErrorNote message={books.error} onRetry={books.reload} />
-        )}
-        {books.data && (
-          <div className="grid gap-3 md:grid-cols-2">
-            {sortBooks(books.data).map((book) => (
-              <BookCard key={book.kind} book={book} />
-            ))}
+      <Reveal index={2}>
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-xl font-semibold">Today’s reads</h2>
+            <span className="eyebrow">New picks each day</span>
           </div>
-        )}
-      </section>
+          {books.loading && <Loading label="Picking today’s books" />}
+          {books.errorCode === 'NO_KEY' ? (
+            <EmptyState
+              title="Add your Gemini key to get book picks"
+              text="Book picks are made with your own free Gemini key. It takes a minute to set up."
+              action={
+                <Link to="/settings" className="btn-ember py-2! text-sm">
+                  Go to Settings
+                </Link>
+              }
+            />
+          ) : (
+            books.error && <ErrorNote message={books.error} onRetry={books.reload} />
+          )}
+          {books.data && (
+            <div className="grid gap-4 md:grid-cols-[1fr_1.25fr]">
+              {sortBooks(books.data).map((book) => (
+                <BookCard key={book.kind} book={book} />
+              ))}
+            </div>
+          )}
+        </section>
+      </Reveal>
     </div>
   )
 }
@@ -157,7 +172,9 @@ function BookCard({ book }: { book: DailyBook }) {
     <article className="card flex gap-4 p-5">
       <div
         aria-hidden="true"
-        className="grid h-24 w-16 shrink-0 place-items-center rounded-lg bg-board font-display text-2xl text-white"
+        className={`grid h-28 w-20 shrink-0 place-items-center border border-ink font-display text-3xl text-on-accent shadow-[3px_3px_0_var(--color-ink)] ${
+          book.kind === 'fiction' ? 'bg-ember' : 'bg-green'
+        }`}
       >
         {book.title.charAt(0)}
       </div>
@@ -168,31 +185,5 @@ function BookCard({ book }: { book: DailyBook }) {
         <p className="mt-2 text-sm leading-relaxed">{book.reason}</p>
       </div>
     </article>
-  )
-}
-
-// Circle that fills halfway per task done today.
-function StreakRing({ value, doneToday }: { value: number; doneToday: number }) {
-  const circumference = 2 * Math.PI * 28
-  const filled = Math.min(doneToday, 2) / 2
-  return (
-    <div className="relative grid h-20 w-20 shrink-0 place-items-center">
-      <svg viewBox="0 0 64 64" className="absolute inset-0 -rotate-90" aria-hidden="true">
-        <circle cx="32" cy="32" r="28" fill="none" stroke="rgb(255 255 255 / 0.12)" strokeWidth="4" />
-        <circle
-          cx="32"
-          cy="32"
-          r="28"
-          fill="none"
-          stroke="#E08A3C"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - filled)}
-          className="transition-[stroke-dashoffset] duration-700"
-        />
-      </svg>
-      <span className="nums font-display text-3xl">{value}</span>
-    </div>
   )
 }

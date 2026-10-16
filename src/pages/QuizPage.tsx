@@ -18,13 +18,10 @@ export default function QuizPage() {
   // Bumping `attempt` reloads the page data, which also gives round 3 fresh questions.
   const [attempt, setAttempt] = useState(0)
 
-  const page = useLoad(
-    async () => {
-      const [unit, questions] = await Promise.all([getUnit(unitId), getQuestions(unitId, round)])
-      return { unit, questions }
-    },
-    `${unitId}-${round}-${attempt}`,
-  )
+  const page = useLoad(async () => {
+    const [unit, questions] = await Promise.all([getUnit(unitId), getQuestions(unitId, round)])
+    return { unit, questions }
+  }, `${unitId}-${round}-${attempt}`)
 
   const backTo = `/exam/unit/${unitId}`
 
@@ -49,7 +46,11 @@ export default function QuizPage() {
       <EmptyState
         title="No questions yet"
         text="This round has no questions yet."
-        action={<Link to={backTo} className="btn-ghost">Back to unit</Link>}
+        action={
+          <Link to={backTo} className="btn-ghost">
+            Back to unit
+          </Link>
+        }
       />
     )
   }
@@ -110,13 +111,13 @@ function Quiz({ title, questions, unitId, round, backTo, onRetry }: QuizProps) {
         </Link>
         <section className="panel p-6 text-center sm:p-10">
           <div aria-hidden="true" className="grid-lines absolute inset-0 opacity-[0.06]" />
-          <div
-            aria-hidden="true"
-            className={`absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full blur-3xl ${result.passed ? 'bg-green/40' : 'bg-ember/30'}`}
-          />
           <div className="relative">
             <p className="eyebrow text-white/50!">{title}</p>
-            <p className="nums mt-3 font-display text-6xl">{result.percent}%</p>
+            <p
+              className={`nums mt-3 text-7xl font-semibold ${result.passed ? 'text-[#4cbf8a]' : 'text-ember'}`}
+            >
+              {result.percent}%
+            </p>
             <p className="nums mt-2 text-white/70">
               {result.score} of {result.total} correct
             </p>
@@ -144,15 +145,21 @@ function Quiz({ title, questions, unitId, round, backTo, onRetry }: QuizProps) {
             return (
               <article key={i} className="card p-5">
                 <p className="text-sm">
-                  <span className={`mr-2 font-semibold ${right ? 'text-green' : 'text-ember'}`}>
-                    {right ? '✓' : '✗'}
-                  </span>
+                  <span className="nums mr-2 text-muted">{String(i + 1).padStart(2, '0')}</span>
                   {q.question}
                 </p>
-                <p className="mt-2 text-sm text-muted">
-                  Answer: <span className="font-medium text-ink">{q.options[q.correctIndex]}</span>
-                  {!right && chosen[i] !== undefined && <> · You chose: {q.options[chosen[i]]}</>}
-                </p>
+                <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                  <span className="inline-flex items-center gap-2 border border-ink bg-green px-2 py-1 text-on-accent">
+                    <span className="nums font-semibold">{LETTERS[q.correctIndex]}</span>
+                    {q.options[q.correctIndex]}
+                  </span>
+                  {!right && chosen[i] !== undefined && (
+                    <span className="inline-flex items-center gap-2 border border-line px-2 py-1 text-muted line-through decoration-ember decoration-2">
+                      <span className="nums">{LETTERS[chosen[i]]}</span>
+                      {q.options[chosen[i]]}
+                    </span>
+                  )}
+                </div>
                 {q.explanation && <p className="mt-2 text-sm text-muted">{q.explanation}</p>}
               </article>
             )
@@ -172,7 +179,10 @@ function Quiz({ title, questions, unitId, round, backTo, onRetry }: QuizProps) {
           {index + 1} / {questions.length}
         </span>
       </div>
-      <ProgressBar value={((index + (picked !== undefined ? 1 : 0)) / questions.length) * 100} label="Quiz progress" />
+      <ProgressBar
+        value={((index + (picked !== undefined ? 1 : 0)) / questions.length) * 100}
+        label="Quiz progress"
+      />
 
       <section className="card p-6 sm:p-8">
         <p className="eyebrow">{title}</p>
@@ -188,13 +198,15 @@ function Quiz({ title, questions, unitId, round, backTo, onRetry }: QuizProps) {
                 role="radio"
                 aria-checked={selected}
                 onClick={() => choose(i)}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
-                  selected ? 'border-green bg-green-soft' : 'border-line hover:border-ink'
+                className={`flex cursor-pointer items-center gap-3 border px-4 py-3 text-left transition ${
+                  selected
+                    ? 'border-ink bg-green-soft shadow-[3px_3px_0_var(--color-ink)]'
+                    : 'border-line hover:border-ink'
                 }`}
               >
                 <span
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-semibold ${
-                    selected ? 'bg-green text-on-accent' : 'bg-paper text-muted'
+                  className={`nums grid h-7 w-7 shrink-0 place-items-center border border-ink text-xs font-semibold ${
+                    selected ? 'bg-green text-on-accent' : 'bg-paper text-ink'
                   }`}
                 >
                   {LETTERS[i]}

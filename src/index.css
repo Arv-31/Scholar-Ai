@@ -61,15 +61,52 @@
       transparent 1px
     );
     background-size: 22px 22px;
-    transition:
-      background-color 0.3s,
-      color 0.3s;
   }
 
   h1,
   h2,
   h3 {
     @apply font-display;
+  }
+
+  /* Mode swap: the new theme is revealed by a growing circle (animated in ModeToggle.tsx) */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  /* Login scene: twinkling stars, wrong-password shake, card dissolving into light */
+  .star {
+    animation: twinkle 4s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle {
+    to {
+      opacity: 0.15;
+    }
+  }
+  .card-shake {
+    animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+  @keyframes shake {
+    20%,
+    60% {
+      translate: -7px 0;
+    }
+    40%,
+    80% {
+      translate: 7px 0;
+    }
+  }
+  .card-dissolve {
+    animation: dissolve 0.45s ease-in forwards;
+  }
+  @keyframes dissolve {
+    to {
+      opacity: 0;
+      filter: blur(10px) brightness(2.4);
+      scale: 1.04;
+    }
   }
 
   /* No motion for people who ask for less */
@@ -79,6 +116,10 @@
     *::after {
       transition-duration: 0.01ms !important;
       animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important; /* never a fast endless flicker */
+    }
+    .star {
+      animation: none;
     }
   }
 }
@@ -262,6 +303,42 @@
   background: var(--color-board);
   color: #edebe3;
   box-shadow: 4px 4px 0 var(--color-ink);
+}
+
+/* List row link: slides 6px right and a 1px ink line draws under it (mouse only).
+   Pair with `group` so children can react, e.g. group-hover:text-ink on the percentage. */
+@utility row-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  transition: translate 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 1.25rem;
+    bottom: 0;
+    left: 1.25rem;
+    height: 1px;
+    background: var(--color-ink);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      translate: 6px 0;
+    }
+    &:hover::after {
+      transform: scaleX(1);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: -2px;
+  }
 }
 
 /* Numbers (scores, streak, watch %): monospace so they line up */
