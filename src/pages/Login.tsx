@@ -38,12 +38,14 @@ export default function Login() {
     return box ? { x: box.left + box.width / 2, y: box.top + box.height * 0.4 } : null
   }, [])
 
-  // Celestial arrow hit the card: dissolve it, then open the home page from that point.
-  const handleImpact = useCallback(
+  // Celestial arrow hit the card: it dissolves into the blast of light.
+  const handleImpact = useCallback(() => setCardFx('card-dissolve'), [])
+
+  // After the 1.5 s blast the screen is pure light; the home page opens out of it from that point.
+  const handleBlastDone = useCallback(
     (point: Point) => {
-      setCardFx('card-dissolve')
-      setLanding({ x: point.x, y: point.y })
-      window.setTimeout(goHome, 420)
+      setLanding({ x: point.x, y: point.y, bright: true })
+      goHome()
     },
     [goHome],
   )
@@ -56,10 +58,8 @@ export default function Login() {
     setError(null)
     setMessage(null)
     setSubmitting(true)
-    if (!isSignUp) {
-      setHolding(true)
-      setPhase('drawing') // he draws the bow while we wait for Supabase
-    }
+    setHolding(true)
+    setPhase('drawing') // he draws the bow while we wait for Supabase
 
     const result = isSignUp ? await signUp(email, password) : await signIn(email, password)
 
@@ -74,13 +74,16 @@ export default function Login() {
       return
     }
 
-    if (isSignUp) {
+    // Sign-up that still needs the email confirmed: no login yet, so no celestial arrow.
+    if (isSignUp && !('signedIn' in result && result.signedIn)) {
+      setHolding(false)
+      setPhase('idle')
       setMessage('Check your email to confirm your account, then sign in.')
       setIsSignUp(false)
       return
     }
 
-    // Login confirmed by the server: only now does the celestial arrow appear.
+    // Login (or sign-up) confirmed by the server: only now does the celestial arrow appear.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setLanding({ fade: true })
       goHome()
@@ -91,7 +94,7 @@ export default function Login() {
       // safety net if the animation could not run (e.g. the tab was hidden)
       setLanding({ fade: true })
       goHome()
-    }, 3500)
+    }, 6000)
   }
 
   async function handleGoogle() {
@@ -107,7 +110,12 @@ export default function Login() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#060a16] text-[#edebe3]">
       <Suspense fallback={null}>
-        <ArcherScene phase={phase} getTarget={getTarget} onImpact={handleImpact} />
+        <ArcherScene
+          phase={phase}
+          getTarget={getTarget}
+          onImpact={handleImpact}
+          onBlastDone={handleBlastDone}
+        />
       </Suspense>
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10">

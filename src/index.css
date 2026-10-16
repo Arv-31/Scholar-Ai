@@ -85,6 +85,51 @@
       opacity: 0.15;
     }
   }
+  .firefly {
+    animation: firefly 6s ease-in-out infinite alternate;
+  }
+  @keyframes firefly {
+    0% {
+      opacity: 0.15;
+      translate: 0 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.3;
+      translate: 14px -18px;
+    }
+  }
+  .mist {
+    animation: mist 22s ease-in-out infinite alternate;
+  }
+  .mist-slow {
+    animation-duration: 34s;
+  }
+  @keyframes mist {
+    to {
+      translate: -60px 0;
+    }
+  }
+  .shooting-star {
+    opacity: 0;
+    animation: shooting-star 9s ease-in 3s infinite;
+  }
+  @keyframes shooting-star {
+    0%,
+    92% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    94% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      translate: 260px 90px;
+    }
+  }
   .card-shake {
     animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97);
   }
@@ -118,8 +163,13 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important; /* never a fast endless flicker */
     }
-    .star {
+    .star,
+    .firefly,
+    .mist {
       animation: none;
+    }
+    .shooting-star {
+      display: none;
     }
   }
 }

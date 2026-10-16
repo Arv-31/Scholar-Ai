@@ -3,7 +3,7 @@
 
 export const LANDING_FLAG = 'scholarai:justLoggedIn'
 
-export type Landing = { x: number; y: number; fade: boolean }
+export type Landing = { x: number; y: number; fade: boolean; bright: boolean }
 
 export function readLanding(): Landing | null {
   try {
@@ -14,6 +14,7 @@ export function readLanding(): Landing | null {
       x: value.x ?? window.innerWidth / 2,
       y: value.y ?? window.innerHeight / 2,
       fade: Boolean(value.fade) || window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      bright: Boolean(value.bright), // opening out of the blast of light (else out of the night sky)
     }
   } catch {
     return null

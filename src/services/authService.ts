@@ -8,13 +8,17 @@ export async function signIn(email: string, password: string): Promise<{ error: 
   return { error: error?.message ?? null }
 }
 
-export async function signUp(email: string, password: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.signUp({
+// signedIn is true when Supabase logs the student in straight away (email confirmation off).
+export async function signUp(
+  email: string,
+  password: string,
+): Promise<{ error: string | null; signedIn: boolean }> {
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { emailRedirectTo: window.location.origin },
   })
-  return { error: error?.message ?? null }
+  return { error: error?.message ?? null, signedIn: Boolean(data.session) }
 }
 
 // Sends the student to Google, then back to our app already logged in.
