@@ -59,11 +59,13 @@ export default function PaperProgress({ value, label }: Props) {
           <PaperIcon value={value} size={180} />
         </div>
       )}
-      {webgl && !failed && (
-        <p className="pointer-events-none absolute bottom-0 left-0 text-xs text-muted">
-          Drag to turn
-        </p>
-      )}
+      {/* Says what the shape is, so a crumpled ball at 0% doesn't look broken. */}
+      <p className="mt-2 text-xs leading-relaxed text-muted">
+        {value >= 100
+          ? 'Fully unfolded: you have mastered this unit.'
+          : 'This crumpled paper is your progress. Watch the videos and pass the quizzes to unfold it into a flat sheet.'}
+        {webgl && !failed && ' Drag to turn it.'}
+      </p>
     </div>
   )
 }
