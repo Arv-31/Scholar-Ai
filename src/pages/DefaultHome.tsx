@@ -8,6 +8,7 @@ import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
 import { localDay } from '../lib/dates'
 import { greeting } from '../lib/greeting'
+import { makeStreakCard, shareOrDownload } from '../lib/streakCard'
 import { liveStreak } from '../lib/streak'
 import { getTodaysBooks } from '../services/aiService'
 import { getBookCover } from '../services/bookCoverService'
@@ -66,6 +67,17 @@ export default function DefaultHome() {
               <p className="nums mt-1 text-lg">
                 {doneCount}/2 · {profile?.best_streak ?? 0}
               </p>
+              <button
+                type="button"
+                className="mt-3 cursor-pointer border border-[#edebe3]/40 px-3 py-1.5 text-xs text-[#edebe3] transition hover:border-[#edebe3]"
+                onClick={() =>
+                  void makeStreakCard(streak, profile?.best_streak ?? 0, displayName).then((blob) =>
+                    shareOrDownload(blob, `scholarai-streak-${streak}.png`),
+                  )
+                }
+              >
+                Share streak card
+              </button>
             </div>
           </div>
           <p className="relative mt-5 text-sm text-white/60">
