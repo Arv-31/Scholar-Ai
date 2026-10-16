@@ -1,17 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { z } from 'zod'
 import LoadingScreen from '../components/LoadingScreen'
 import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
+import { NewPasswordForm } from '../lib/authSchemas'
 import { updatePassword } from '../services/authService'
-
-const NewPassword = z
-  .object({
-    password: z.string().min(8, 'Use at least 8 characters.'),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, { message: 'The two passwords do not match.' })
 
 // Opened from the "reset password" email. Supabase signs the student in from the link,
 // so all that is left is choosing the new password.
@@ -27,7 +20,7 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const checked = NewPassword.safeParse({ password, confirm })
+    const checked = NewPasswordForm.safeParse({ password, confirm })
     if (!checked.success) {
       setError(checked.error.issues[0].message)
       return

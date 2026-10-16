@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* short: = laptop/projector screens that are not very tall (e.g. 1366x768) */
+@custom-variant short (@media (max-height: 820px));
+
 /* ScholarAI theme: these become Tailwind classes like bg-ink, text-green, font-display.
    Values here are Default mode (paper). Exam mode (blackboard) swaps them below via
    <html data-mode="exam">, so one block of CSS themes the whole app. */
@@ -152,6 +155,12 @@
       filter: blur(10px) brightness(2.4);
       scale: 1.04;
     }
+  }
+
+  /* Keyboard users always see where they are (mouse clicks show no ring) */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
   }
 
   /* No motion for people who ask for less */

@@ -73,6 +73,12 @@ describe('scoreQuiz', () => {
     expect(scoreQuiz(questions, [0, 1, 0, 1, 1]).passed).toBe(false) // 2/5 = 40%
   })
 
+  it('does not pass at 59%', () => {
+    const many = Array.from({ length: 22 }, (_, i) => ({ ...questions[0], question: `M${i}` }))
+    const chosen = many.map((_, i) => (i < 13 ? 0 : 1)) // 13/22 = 59%
+    expect(scoreQuiz(many, chosen)).toMatchObject({ percent: 59, passed: false })
+  })
+
   it('stores what was chosen next to the right answer', () => {
     const records = toAnswerRecords(questions.slice(0, 1), [3])
     expect(records[0]).toMatchObject({ question: 'Q0', chosen: 3, correct: 0 })

@@ -2,6 +2,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { Link, useLocation, useNavigate, useOutlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useOnline } from '../hooks/useOnline'
 import type { ShellContext } from '../hooks/useShell'
 import { signOut } from '../services/authService'
 import { getMyProfile, updateMyMode } from '../services/profileService'
@@ -40,6 +41,7 @@ export default function AppShell() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const online = useOnline()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [savedMode, setSavedMode] = useState<Mode>('default')
 
@@ -134,6 +136,15 @@ export default function AppShell() {
             <Logo />
             <ModeToggle mode={mode} onChange={handleModeChange} />
           </header>
+
+          {!online && (
+            <p
+              role="status"
+              className="border-b border-ink bg-ember-soft px-4 py-2 text-center text-sm sm:px-8"
+            >
+              You are offline. Pages and answers will not load or save until you reconnect.
+            </p>
+          )}
 
           <main className="w-full max-w-5xl px-4 pt-6 pb-28 sm:px-8 lg:px-12 lg:py-10">
             <AnimatePresence mode="wait" initial={false}>

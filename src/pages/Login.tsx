@@ -4,6 +4,7 @@ import LoadingScreen from '../components/LoadingScreen'
 import type { ArcherPhase, Point } from '../components/login/ArcherScene'
 import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
+import { firstProblem, MIN_PASSWORD, SignInForm, SignUpForm } from '../lib/authSchemas'
 import { clearLanding, setLanding } from '../lib/landing'
 import { sendPasswordReset, signIn, signInWithGoogle, signUp } from '../services/authService'
 
@@ -56,8 +57,13 @@ export default function Login() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    setError(null)
     setMessage(null)
+    const problem = firstProblem(isSignUp ? SignUpForm : SignInForm, { email, password })
+    if (problem) {
+      setError(problem)
+      return
+    }
+    setError(null)
     setSubmitting(true)
     setHolding(true)
     setPhase('drawing') // he draws the bow while we wait for Supabase
@@ -136,17 +142,17 @@ export default function Login() {
       </header>
 
       {/* Card sits centre-left so the archer's line of sight crosses it */}
-      <main className="relative z-10 flex min-h-[calc(100vh-5rem)] items-center px-4 pb-16 sm:px-10 lg:pl-[9vw]">
+      <main className="relative z-10 flex min-h-[calc(100vh-5rem)] items-center px-4 pb-16 sm:px-10 lg:pl-[9vw] short:pb-6">
         <div className="mx-auto w-full max-w-sm lg:mx-0">
           <p className="eyebrow text-white/50!">Entrance prep · Habit building</p>
-          <h1 className="mt-2 text-3xl leading-tight font-medium text-white sm:text-4xl">
+          <h1 className="mt-2 text-3xl leading-tight font-medium text-white sm:text-4xl lg:w-[30rem]">
             Prepare for NIMCET, PGCET-MCA and MBA.
           </h1>
 
           <div
             ref={cardRef}
             data-no-arrows
-            className={`card mt-6 p-7 text-ink sm:p-8 ${cardFx}`}
+            className={`card mt-6 p-7 text-ink sm:p-8 short:mt-4 short:p-6 ${cardFx}`}
             style={{ boxShadow: '6px 6px 0 rgb(239 234 219 / 0.22)' }}
             onAnimationEnd={() => cardFx === 'card-shake' && setCardFx('')}
           >
@@ -211,19 +217,19 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => void handleGoogle()}
-                  className="btn-ghost mt-7 w-full gap-3! py-3!"
+                  className="btn-ghost mt-7 w-full gap-3! py-3! short:mt-5 short:py-2.5!"
                 >
                   <GoogleMark />
                   Continue with Google
                 </button>
 
-                <div className="my-5 flex items-center gap-3 text-xs text-muted">
+                <div className="my-5 flex items-center gap-3 text-xs text-muted short:my-3">
                   <span className="h-px flex-1 bg-line" />
                   or with email
                   <span className="h-px flex-1 bg-line" />
                 </div>
 
-                <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                <form className="flex flex-col gap-4 short:gap-3" onSubmit={handleSubmit}>
                   <label className="flex flex-col gap-1.5">
                     <span className="text-sm font-medium">Email</span>
                     <input
@@ -246,7 +252,7 @@ export default function Login() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      minLength={6}
+                      minLength={isSignUp ? MIN_PASSWORD : undefined}
                       autoComplete={isSignUp ? 'new-password' : 'current-password'}
                     />
                   </label>
@@ -283,7 +289,7 @@ export default function Login() {
                   </button>
                 </form>
 
-                <p className="mt-6 text-center text-sm text-muted">
+                <p className="mt-6 text-center text-sm text-muted short:mt-4">
                   {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
                   <button
                     type="button"

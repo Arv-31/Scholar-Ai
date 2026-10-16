@@ -205,7 +205,8 @@ export default function ArcherScene({ phase, getTarget, onImpact, onBlastDone }:
     let clock = 0
     function tick(now: number) {
       frame = requestAnimationFrame(tick)
-      const dt = Math.min(0.05, (now - last) / 1000)
+      // the first frame's time can be slightly earlier than `last`: never step backwards
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000))
       last = now
       clock += dt
       const { phase: currentPhase, getTarget: target } = live.current
@@ -304,6 +305,9 @@ export default function ArcherScene({ phase, getTarget, onImpact, onBlastDone }:
         : angle + (wantAngle - angle) * (1 - Math.exp(-(currentPhase === 'drawing' ? 6 : 5) * dt))
       const drawSpeed = wantDraw > draw ? (instant ? 20 : 9) : 14
       draw += (wantDraw - draw) * (1 - Math.exp(-drawSpeed * dt))
+      // a bad number (e.g. an unmeasured target) must never break the drawing
+      if (!Number.isFinite(angle)) angle = RELAXED
+      if (!Number.isFinite(draw)) draw = 0
 
       // --- pose, in the archer's own coordinates ---
       const d = dirOf(angle)
