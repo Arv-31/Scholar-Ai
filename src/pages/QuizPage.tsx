@@ -194,7 +194,7 @@ function Quiz({ title, questions, unitId, round, backTo, onRetry }: QuizProps) {
               >
                 <span
                   className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-semibold ${
-                    selected ? 'bg-green text-white' : 'bg-paper text-muted'
+                    selected ? 'bg-green text-on-accent' : 'bg-paper text-muted'
                   }`}
                 >
                   {LETTERS[i]}

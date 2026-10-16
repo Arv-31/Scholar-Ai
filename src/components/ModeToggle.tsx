@@ -27,7 +27,7 @@ export default function ModeToggle({ mode, onChange }: Props) {
             aria-pressed={active}
             onClick={() => onChange(item.value)}
             className={`cursor-pointer rounded-full px-4 py-1.5 font-medium transition ${
-              active ? `${item.activeClass} text-white shadow-sm` : 'text-muted hover:text-ink'
+              active ? `${item.activeClass} text-on-accent shadow-sm` : 'text-muted hover:text-ink'
             }`}
           >
             {item.label}

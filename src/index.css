@@ -1,22 +1,52 @@
 @import 'tailwindcss';
 
-/* ScholarAI theme: these become Tailwind classes like bg-ink, text-green, font-display */
+/* ScholarAI theme: these become Tailwind classes like bg-ink, text-green, font-display.
+   Values here are Default mode (paper). Exam mode (blackboard) swaps them below via
+   <html data-mode="exam">, so one block of CSS themes the whole app. */
 @theme {
-  --color-ink: #12151b;
-  --color-paper: #f4f5f1;
-  --color-surface: #ffffff;
-  --color-line: #e3e5df;
-  --color-muted: #646b76;
+  --color-ink: #14161a; /* main text */
+  --color-paper: #f3efe4; /* page background */
+  --color-surface: #fbf9f3; /* cards */
+  --color-line: #d9d3c3; /* soft dividers */
+  --color-muted: #5d6068; /* secondary text */
   --color-green: #2f9e63;
-  --color-green-soft: #e4f3eb;
-  --color-ember: #e08a3c;
-  --color-ember-soft: #fbeedf;
+  --color-green-soft: #e1efe4;
+  --color-ember: #d9772b;
+  --color-ember-soft: #f6e6d3;
+  --color-board: #14161a; /* dark blocks (hero panels, chat bubbles) in both modes */
+  --color-on-accent: #14161a; /* text on ember/green buttons (white fails contrast) */
+  --color-danger: #a8321e;
+  --color-danger-soft: #f6e1da;
+
+  /* Square-ish corners everywhere (rounded-full stays round) */
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
 
   --font-display: 'Fraunces', Georgia, serif;
   --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 @layer base {
+  /* Exam mode = dark blackboard with chalk text */
+  html[data-mode='exam'] {
+    --color-ink: #edebe3;
+    --color-paper: #1a1f1c;
+    --color-surface: #232a26;
+    --color-line: #3a433d;
+    --color-muted: #9aa39c;
+    --color-green: #4cbf8a;
+    --color-green-soft: #2a3d33;
+    --color-ember: #e08a3c;
+    --color-ember-soft: #3d3226;
+    --color-board: #111513;
+    --color-danger: #f08a73;
+    --color-danger-soft: #3d2622;
+    color-scheme: dark;
+  }
+
   html,
   body,
   #root {
@@ -25,15 +55,31 @@
 
   body {
     @apply bg-paper font-sans text-ink antialiased;
-    /* faint dot grid behind every page */
-    background-image: radial-gradient(rgb(18 21 27 / 0.07) 1px, transparent 1px);
+    /* faint dot grid behind every page, drawn in the text colour */
+    background-image: radial-gradient(
+      color-mix(in srgb, var(--color-ink) 8%, transparent) 1px,
+      transparent 1px
+    );
     background-size: 22px 22px;
+    transition:
+      background-color 0.3s,
+      color 0.3s;
   }
 
   h1,
   h2,
   h3 {
     @apply font-display;
+  }
+
+  /* No motion for people who ask for less */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -46,11 +92,31 @@
   color: var(--color-muted);
 }
 
-/* White rounded card */
+/* Printed-worksheet card: 1px ink border and a hard offset shadow.
+   Clickable cards (links/buttons) lift on hover. */
 @utility card {
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: 1.25rem;
+  border: 1px solid var(--color-ink);
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 var(--color-ink);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+
+  &:is(a, button):hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--color-ink);
+  }
+
+  &:is(a, button):active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--color-ink);
+  }
+
+  &:is(a, button):focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
 }
 
 /* Thin square grid, drawn in the current text colour */
@@ -64,47 +130,49 @@
 @utility field {
   width: 100%;
   padding: 0.7rem 0.9rem;
-  border: 1px solid var(--color-line);
-  border-radius: 0.75rem;
+  border: 1px solid var(--color-ink);
+  border-radius: 4px;
   background: var(--color-surface);
   color: var(--color-ink);
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+  transition: box-shadow 0.15s;
 
   &::placeholder {
     color: var(--color-muted);
-    opacity: 0.6;
+    opacity: 0.7;
   }
 
   &:focus {
     outline: none;
-    border-color: var(--color-green);
-    box-shadow: 0 0 0 4px rgb(47 158 99 / 0.15);
+    box-shadow: 3px 3px 0 var(--color-ink);
   }
 }
 
+/* Flat accent button with an ink border; the shadow collapses when pressed */
 @utility btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  border: 1px solid var(--color-ink);
+  border-radius: 4px;
   background: var(--color-green);
-  color: #fff;
+  color: var(--color-on-accent);
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 3px 3px 0 var(--color-ink);
   transition:
-    box-shadow 0.2s,
+    transform 0.1s,
+    box-shadow 0.1s,
     opacity 0.2s;
 
-  &:hover:not(:disabled) {
-    box-shadow: 0 10px 28px -10px rgb(47 158 99 / 0.8);
+  &:active:not(:disabled) {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--color-ink);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-green);
-    outline-offset: 2px;
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
   }
 
   &:disabled {
@@ -119,22 +187,26 @@
   align-items: center;
   justify-content: center;
   padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  border: 1px solid var(--color-ink);
+  border-radius: 4px;
   background: var(--color-ember);
-  color: #fff;
+  color: var(--color-on-accent);
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 3px 3px 0 var(--color-ink);
   transition:
-    box-shadow 0.2s,
+    transform 0.1s,
+    box-shadow 0.1s,
     opacity 0.2s;
 
-  &:hover:not(:disabled) {
-    box-shadow: 0 10px 28px -10px rgb(224 138 60 / 0.8);
+  &:active:not(:disabled) {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--color-ink);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-ember);
-    outline-offset: 2px;
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
   }
 
   &:disabled {
@@ -150,17 +222,24 @@
   justify-content: center;
   gap: 0.4rem;
   padding: 0.55rem 0.9rem;
-  border: 1px solid var(--color-line);
-  border-radius: 0.75rem;
+  border: 1px solid var(--color-ink);
+  border-radius: 4px;
   background: var(--color-surface);
   color: var(--color-ink);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
 
   &:hover:not(:disabled) {
-    border-color: var(--color-ink);
+    box-shadow: 2px 2px 0 var(--color-ink);
+  }
+
+  &:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: none;
   }
 
   &:focus-visible {
@@ -174,17 +253,20 @@
   }
 }
 
-/* Dark "screen" panel with a faint grid: used for the hero card on each page */
+/* Dark "blackboard" panel with a faint grid: used for the hero card on each page */
 @utility panel {
   position: relative;
   overflow: hidden;
-  border-radius: 1.5rem;
-  background: var(--color-ink);
-  color: #fff;
+  border: 1px solid var(--color-ink);
+  border-radius: 4px;
+  background: var(--color-board);
+  color: #edebe3;
+  box-shadow: 4px 4px 0 var(--color-ink);
 }
 
-/* Numbers that line up nicely in tiles and tables */
+/* Numbers (scores, streak, watch %): monospace so they line up */
 @utility nums {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }

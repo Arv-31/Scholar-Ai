@@ -157,7 +157,7 @@ function BookCard({ book }: { book: DailyBook }) {
     <article className="card flex gap-4 p-5">
       <div
         aria-hidden="true"
-        className="grid h-24 w-16 shrink-0 place-items-center rounded-lg bg-ink font-display text-2xl text-white"
+        className="grid h-24 w-16 shrink-0 place-items-center rounded-lg bg-board font-display text-2xl text-white"
       >
         {book.title.charAt(0)}
       </div>

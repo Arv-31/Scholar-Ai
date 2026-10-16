@@ -203,7 +203,7 @@ function Videos({ unitId }: { unitId: string }) {
                 {video.thumbnail_url ? (
                   <img src={video.thumbnail_url} alt="" className="aspect-video w-full object-cover" loading="lazy" />
                 ) : (
-                  <div className="aspect-video w-full bg-ink" />
+                  <div className="aspect-video w-full bg-board" />
                 )}
                 <div className="space-y-2 p-4">
                   <p className="line-clamp-2 text-sm font-medium">{video.title}</p>

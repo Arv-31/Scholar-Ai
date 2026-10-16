@@ -15,11 +15,11 @@ export function ErrorNote({ message, onRetry }: { message: string; onRetry?: () 
   return (
     <div
       role="alert"
-      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger"
     >
       <span>{message}</span>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="btn-ghost text-red-700!">
+        <button type="button" onClick={onRetry} className="btn-ghost text-danger!">
           Try again
         </button>
       )}

@@ -66,7 +66,7 @@ export default function VideoPlayer({ youtubeId, startPercent, onProgress }: Pro
   return (
     <div
       ref={hostRef}
-      className="aspect-video w-full overflow-hidden rounded-2xl bg-ink [&_iframe]:h-full [&_iframe]:w-full"
+      className="aspect-video w-full overflow-hidden rounded-2xl bg-board [&_iframe]:h-full [&_iframe]:w-full"
     />
   )
 }

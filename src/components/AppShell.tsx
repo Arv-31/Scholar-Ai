@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion, MotionConfig } from 'motion/react'
+import { Link, useLocation, useNavigate, useOutlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import type { ShellContext } from '../hooks/useShell'
 import { signOut } from '../services/authService'
@@ -70,18 +71,82 @@ export default function AppShell() {
     refreshProfile,
   }
 
+  // The theme in index.css follows this: <html data-mode="exam"> = blackboard, "default" = paper.
+  useEffect(() => {
+    document.documentElement.dataset.mode = mode
+    return () => {
+      document.documentElement.dataset.mode = 'default' // back to paper on the login page
+    }
+  }, [mode])
+
+  // useOutlet (not <Outlet />) so the old page can stay on screen while it fades out.
+  const page = useOutlet(context)
+
   const accent = mode === 'exam' ? 'bg-green' : 'bg-ember'
+  const accentBorder = mode === 'exam' ? 'border-green' : 'border-ember'
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen flex-col border-r border-line bg-surface/70 px-5 py-6 backdrop-blur lg:flex">
-        <Logo />
-        <div className="mt-8">
-          <ModeToggle mode={mode} onChange={handleModeChange} />
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">
+        {/* Desktop sidebar */}
+        <aside className="sticky top-0 hidden h-screen flex-col border-r border-ink bg-surface px-5 py-6 lg:flex">
+          <Logo />
+          <div className="mt-8">
+            <ModeToggle mode={mode} onChange={handleModeChange} />
+          </div>
+          <p className="eyebrow mt-10 mb-3 px-3">Menu</p>
+          <nav className="flex flex-col gap-1">
+            {NAV[mode].map((item) => {
+              const active = isActive(item.to, pathname)
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-current={active ? 'page' : undefined}
+                  className={`border-l-4 px-3 py-2 text-sm transition ${
+                    active
+                      ? `${accentBorder} font-semibold text-ink`
+                      : 'border-transparent font-medium text-muted hover:border-line hover:text-ink'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="mt-auto cursor-pointer border-l-4 border-transparent px-3 py-2 text-left text-sm text-muted transition hover:text-ink"
+          >
+            Sign out
+          </button>
+        </aside>
+
+        <div className="flex min-w-0 flex-col">
+          {/* Mobile top bar */}
+          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink bg-paper px-4 py-3 lg:hidden">
+            <Logo />
+            <ModeToggle mode={mode} onChange={handleModeChange} />
+          </header>
+
+          <main className="w-full max-w-5xl px-4 pt-6 pb-28 sm:px-8 lg:px-12 lg:py-10">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {page}
+              </motion.div>
+            </AnimatePresence>
+          </main>
         </div>
-        <p className="eyebrow mt-10 mb-3 px-3">Menu</p>
-        <nav className="flex flex-col gap-1">
+
+        {/* Mobile floating bottom menu */}
+        <nav className="fixed inset-x-3 bottom-3 z-10 flex justify-around gap-1 rounded-md border border-ink bg-board p-1.5 shadow-[3px_3px_0_var(--color-ink)] lg:hidden">
           {NAV[mode].map((item) => {
             const active = isActive(item.to, pathname)
             return (
@@ -89,55 +154,16 @@ export default function AppShell() {
                 key={item.to}
                 to={item.to}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                  active ? 'bg-ink text-white' : 'text-muted hover:bg-paper hover:text-ink'
+                className={`flex-1 rounded-sm py-2.5 text-center text-sm font-medium transition ${
+                  active ? `${accent} text-on-accent` : 'text-white/60'
                 }`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${active ? accent : 'bg-line'}`} />
                 {item.label}
               </Link>
             )
           })}
         </nav>
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="mt-auto cursor-pointer rounded-xl px-3 py-2.5 text-left text-sm text-muted transition hover:bg-paper hover:text-ink"
-        >
-          Sign out
-        </button>
-      </aside>
-
-      <div className="flex min-w-0 flex-col">
-        {/* Mobile top bar */}
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-paper/80 px-4 py-3 backdrop-blur lg:hidden">
-          <Logo />
-          <ModeToggle mode={mode} onChange={handleModeChange} />
-        </header>
-
-        <main className="w-full max-w-5xl px-4 pt-6 pb-28 sm:px-8 lg:px-12 lg:py-10">
-          <Outlet context={context} />
-        </main>
       </div>
-
-      {/* Mobile floating bottom menu */}
-      <nav className="fixed inset-x-3 bottom-3 z-10 flex justify-around gap-1 rounded-2xl bg-ink/95 p-1.5 shadow-lg backdrop-blur lg:hidden">
-        {NAV[mode].map((item) => {
-          const active = isActive(item.to, pathname)
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              aria-current={active ? 'page' : undefined}
-              className={`flex-1 rounded-xl py-2.5 text-center text-sm font-medium transition ${
-                active ? `${accent} text-white` : 'text-white/60'
-              }`}
-            >
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
-    </div>
+    </MotionConfig>
   )
 }

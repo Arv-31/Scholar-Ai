@@ -53,7 +53,7 @@ export default function Login() {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
       {/* Brand panel: a short header on mobile, the full left half on desktop */}
-      <aside className="relative flex flex-col justify-between overflow-hidden bg-ink px-6 py-8 text-white sm:px-10 lg:p-14">
+      <aside className="relative flex flex-col justify-between overflow-hidden bg-board px-6 py-8 text-white sm:px-10 lg:p-14">
         <div aria-hidden="true" className="grid-lines absolute inset-0 opacity-[0.06]" />
         <div
           aria-hidden="true"
@@ -141,7 +141,7 @@ export default function Login() {
             </label>
 
             {error && (
-              <p role="alert" className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              <p role="alert" className="rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger">
                 {error}
               </p>
             )}
