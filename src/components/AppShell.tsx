@@ -13,7 +13,8 @@ import ModeToggle from './ModeToggle'
 import { Loading } from './StateNote'
 
 // Menu items for each mode.
-const NAV: Record<Mode, { to: string; label: string; short: string }[]> = {
+// `wide` items show only in the desktop sidebar (the phone menu has room for six).
+const NAV: Record<Mode, { to: string; label: string; short: string; wide?: boolean }[]> = {
   default: [
     { to: '/default', label: 'Today', short: 'Today' },
     { to: '/progress', label: 'Progress', short: 'Progress' },
@@ -21,6 +22,7 @@ const NAV: Record<Mode, { to: string; label: string; short: string }[]> = {
   ],
   exam: [
     { to: '/exam', label: 'Subjects', short: 'Units' },
+    { to: '/exam/syllabus', label: 'Syllabus map', short: 'Map', wide: true },
     { to: '/exam/mock', label: 'Mock test', short: 'Mock' },
     { to: '/exam/mistakes', label: 'Mistakes', short: 'Mistakes' },
     { to: '/exam/chat', label: 'Ask AI', short: 'Ask AI' },
@@ -31,7 +33,7 @@ const NAV: Record<Mode, { to: string; label: string; short: string }[]> = {
 
 // 'Subjects' stays highlighted inside a unit or quiz page.
 function isActive(to: string, pathname: string): boolean {
-  if (to === '/exam') return pathname === '/exam' || pathname.startsWith('/exam/unit')
+  if (to === '/exam') return pathname === '/exam' || /^\/exam\/(unit|notes)/.test(pathname)
   return pathname === to
 }
 
@@ -96,7 +98,7 @@ export default function AppShell() {
       <LandingReveal />
       <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">
         {/* Desktop sidebar */}
-        <aside className="sticky top-0 hidden h-screen flex-col border-r border-ink bg-surface px-5 py-6 lg:flex">
+        <aside className="sticky top-0 hidden h-screen print:hidden! flex-col border-r border-ink bg-surface px-5 py-6 lg:flex">
           <Logo />
           <div className="mt-8">
             <ModeToggle mode={mode} onChange={handleModeChange} />
@@ -132,7 +134,7 @@ export default function AppShell() {
 
         <div className="flex min-w-0 flex-col">
           {/* Mobile top bar */}
-          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink bg-paper px-4 py-3 lg:hidden">
+          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink bg-paper px-4 py-3 lg:hidden print:hidden">
             <Logo />
             <ModeToggle mode={mode} onChange={handleModeChange} />
           </header>
@@ -140,7 +142,7 @@ export default function AppShell() {
           {!online && (
             <p
               role="status"
-              className="border-b border-ink bg-ember-soft px-4 py-2 text-center text-sm sm:px-8"
+              className="border-b border-ink bg-ember-soft px-4 py-2 text-center text-sm sm:px-8 print:hidden"
             >
               You are offline. Pages and answers will not load or save until you reconnect.
             </p>
@@ -162,22 +164,24 @@ export default function AppShell() {
         </div>
 
         {/* Mobile floating bottom menu */}
-        <nav className="fixed inset-x-3 bottom-3 z-10 flex justify-around gap-1 rounded-md border border-ink bg-board p-1.5 shadow-[3px_3px_0_var(--color-ink)] lg:hidden">
-          {NAV[mode].map((item) => {
-            const active = isActive(item.to, pathname)
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                aria-current={active ? 'page' : undefined}
-                className={`min-w-0 flex-1 truncate rounded-sm px-0.5 py-2.5 text-center text-[11px] font-medium transition sm:text-sm ${
-                  active ? `${accent} text-on-accent` : 'text-white/60'
-                }`}
-              >
-                {item.short}
-              </Link>
-            )
-          })}
+        <nav className="fixed inset-x-3 bottom-3 z-10 flex print:hidden justify-around gap-1 rounded-md border border-ink bg-board p-1.5 shadow-[3px_3px_0_var(--color-ink)] lg:hidden">
+          {NAV[mode]
+            .filter((item) => !item.wide)
+            .map((item) => {
+              const active = isActive(item.to, pathname)
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-current={active ? 'page' : undefined}
+                  className={`min-w-0 flex-1 truncate rounded-sm px-0.5 py-2.5 text-center text-[11px] font-medium transition sm:text-sm ${
+                    active ? `${accent} text-on-accent` : 'text-white/60'
+                  }`}
+                >
+                  {item.short}
+                </Link>
+              )
+            })}
         </nav>
       </div>
     </MotionConfig>

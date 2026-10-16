@@ -1,0 +1,301 @@
+import type { ExamNotes } from '../../types'
+
+// NIMCET · Mathematics. Drafted for ScholarAI; review against the official syllabus.
+const maths: ExamNotes = {
+  'Algebra|Sets & Logarithms': {
+    paragraphs: [
+      'A set is a well-defined collection of objects, such as the vowels of English or the even numbers below 20. Sets are combined with union (everything in either set), intersection (only what is common) and difference (in one set but not the other). Logarithms answer the question "what power gives this number?": log₂8 = 3 because 2³ = 8. NIMCET uses both topics as quick scoring questions, and they also appear inside harder problems on functions and series.',
+      'For sets, draw a Venn diagram and fill it from the inside out: first the region common to all sets, then each overlap, then the parts that belong to one set only. Counting questions then become simple addition. For logarithms, turn the question into powers or use the three main laws: the log of a product is a sum, the log of a quotient is a difference, and a power comes down as a multiplier. Change of base lets you rewrite any log in terms of common logs when bases do not match.',
+      'Typical questions ask for the number of students who like neither of two subjects, the number of subsets or power-set elements, or the value of an expression like log₃27 + log₂(1/8). Watch the domain: a log is defined only for a positive argument and a positive base other than 1, so in equations always reject answers that make the argument zero or negative. With −3 for a wrong answer, check the trap options such as treating log(a + b) as log a + log b, which is never a valid rule.',
+    ],
+    keyPoints: [
+      'A set with n elements has 2ⁿ subsets and 2ⁿ − 1 proper subsets.',
+      'Fill Venn diagrams from the centre outwards; "neither" = total − union.',
+      'De Morgan: (A ∪ B)′ = A′ ∩ B′ and (A ∩ B)′ = A′ ∪ B′.',
+      'logₐ1 = 0 and logₐa = 1 for any valid base a.',
+      'A log needs a positive argument and a base > 0, ≠ 1: check every answer.',
+      'There is no rule for log(a + b): it is a common wrong option.',
+    ],
+    formulas: [
+      'n(A ∪ B) = n(A) + n(B) − n(A ∩ B)',
+      'n(A ∪ B ∪ C) = Σn(A) − Σn(A ∩ B) + n(A ∩ B ∩ C)',
+      'logₐ(xy) = logₐx + logₐy',
+      'logₐ(x/y) = logₐx − logₐy',
+      'logₐ(xⁿ) = n · logₐx',
+      'Change of base: logₐb = log b / log a',
+    ],
+  },
+  'Algebra|Quadratics & Complex Numbers': {
+    paragraphs: [
+      'A quadratic equation has the form ax² + bx + c = 0 with a ≠ 0, and it always has two roots, which may be real and different, real and equal, or a pair of complex numbers. Complex numbers extend the real line with i, where i² = −1, and are written as a + bi. NIMCET asks about both together because the nature of a quadratic’s roots depends on whether its discriminant is positive, zero or negative, and a negative discriminant leads straight into complex roots.',
+      'Most questions do not need you to solve the equation at all. The sum of the roots is −b/a and the product is c/a, so expressions like α² + β² or 1/α + 1/β can be built from these two values. For complex numbers, the modulus |z| is the distance from the origin, √(a² + b²), and the conjugate flips the sign of the imaginary part. Powers of i repeat in a cycle of four, so divide the power by 4 and use only the remainder.',
+      'Expect questions such as "if α and β are roots of x² − 5x + 6 = 0, find α² + β²", "find the condition for equal roots", or "find |3 + 4i|" (which is 5). Forming a new equation from given roots uses x² − (sum)x + (product) = 0. A favourite trap is the sign of the sum of roots: it is −b/a, not b/a. Another is i⁴ⁿ⁺³, which equals −i. Rationalising a complex fraction by multiplying with the conjugate of the denominator settles most division questions.',
+    ],
+    keyPoints: [
+      'D = b² − 4ac: D > 0 two real roots, D = 0 equal roots, D < 0 complex conjugate roots.',
+      'Complex roots of a real quadratic always come in conjugate pairs.',
+      'Build expressions from α + β and αβ instead of solving.',
+      'Powers of i cycle: i, −1, −i, 1 (use the remainder of n ÷ 4).',
+      '|z| is a distance; z · z̄ = |z|².',
+      'To divide complex numbers, multiply top and bottom by the conjugate of the bottom.',
+    ],
+    formulas: [
+      'x = [−b ± √(b² − 4ac)] / 2a',
+      'α + β = −b/a,  αβ = c/a',
+      'α² + β² = (α + β)² − 2αβ',
+      'Equation from roots: x² − (α + β)x + αβ = 0',
+      '|a + bi| = √(a² + b²),  conjugate of a + bi = a − bi',
+      'i² = −1, i³ = −i, i⁴ = 1',
+    ],
+  },
+  'Algebra|Sequences, Series & Combinations': {
+    paragraphs: [
+      'A sequence is an ordered list of numbers that follows a rule, and a series is the sum of its terms. The two families NIMCET asks about most are arithmetic progressions (AP), where the same number is added each time, and geometric progressions (GP), where each term is multiplied by the same ratio. Permutations and combinations are counting tools: a permutation counts ordered arrangements and a combination counts selections where order does not matter. All of these are high-frequency topics.',
+      'For an AP, find the first term a and common difference d, then use the nth-term and sum formulas. For a GP, find a and the ratio r; when |r| < 1 the infinite series has a finite sum a/(1 − r). In counting, first decide whether order matters. Arranging people in a row is a permutation; choosing a team is a combination. Break harder problems into cases and use the multiplication rule (and = multiply) and the addition rule (or = add).',
+      'Questions often give two terms of an AP and ask for a later term or the sum, ask for the sum of an infinite GP like 1 + 1/2 + 1/4 + …, or ask how many ways a committee can be formed with conditions. Remember that ⁿCᵣ = ⁿCₙ₋ᵣ, which makes large values quick to compute. In arrangement problems with identical letters, divide by the factorial of each repeat count. If a condition says two people must sit together, tie them into one unit and multiply by 2 for their internal order.',
+    ],
+    keyPoints: [
+      'AP: constant difference d. GP: constant ratio r.',
+      'An infinite GP has a sum only when |r| < 1.',
+      'Order matters → permutation; order does not matter → combination.',
+      '"And" multiplies the counts, "or" adds them.',
+      'ⁿCᵣ = ⁿCₙ₋ᵣ, so ¹⁰C₈ = ¹⁰C₂ = 45.',
+      'Identical items: divide by the factorial of each repeat count.',
+    ],
+    formulas: [
+      'AP: aₙ = a + (n − 1)d,  Sₙ = n/2 [2a + (n − 1)d]',
+      'GP: aₙ = arⁿ⁻¹,  Sₙ = a(rⁿ − 1)/(r − 1)',
+      'Infinite GP: S = a / (1 − r),  |r| < 1',
+      'ⁿPᵣ = n! / (n − r)!',
+      'ⁿCᵣ = n! / [r!(n − r)!]',
+      'Arrangements of n items with repeats p, q: n! / (p! q!)',
+    ],
+  },
+  'Calculus|Limits': {
+    paragraphs: [
+      'A limit describes the value a function gets closer and closer to as x approaches a point, even if the function is not defined exactly at that point. Limits are the foundation of calculus: derivatives and continuity are both defined using them. In NIMCET they usually appear as direct evaluation questions where simply substituting the value gives an undefined form like 0/0, and the task is to remove that problem.',
+      'First, always try direct substitution. If it gives a real number, that is the answer. If it gives 0/0, factorise and cancel the common factor, or rationalise a square-root expression by multiplying with its conjugate. Standard limits such as sin x / x → 1 as x → 0 handle trigonometric forms. For limits as x → ∞ of a rational function, divide the top and bottom by the highest power of x; only the leading terms decide the answer. L’Hospital’s rule (differentiate top and bottom separately) is a fast backup for 0/0 and ∞/∞ forms.',
+      'Common questions are lim (x² − 9)/(x − 3) as x → 3 (answer 6), lim sin 3x / x as x → 0 (answer 3), or the limit of (2x² + 1)/(5x² − x) as x → ∞ (answer 2/5). Another frequent type is (1 + 1/x)ˣ → e. Do not apply L’Hospital’s rule when the form is not indeterminate, and remember that a limit exists only when the left-hand and right-hand limits are equal, which matters for modulus and piecewise functions.',
+    ],
+    keyPoints: [
+      'Try direct substitution first; only 0/0 or ∞/∞ needs more work.',
+      'Factorise and cancel, or rationalise roots, to remove 0/0.',
+      'As x → ∞, compare the highest powers in the numerator and denominator.',
+      'L’Hospital: differentiate top and bottom separately (not as a quotient).',
+      'The limit exists only if the left and right limits are equal.',
+      'Continuity at a: the limit equals f(a).',
+    ],
+    formulas: [
+      'lim(x→0) sin x / x = 1,  lim(x→0) tan x / x = 1',
+      'lim(x→a) (xⁿ − aⁿ)/(x − a) = n·aⁿ⁻¹',
+      'lim(x→0) (eˣ − 1)/x = 1,  lim(x→0) (aˣ − 1)/x = ln a',
+      'lim(x→∞) (1 + 1/x)ˣ = e',
+      'lim(x→0) ln(1 + x)/x = 1',
+    ],
+  },
+  'Calculus|Differentiation': {
+    paragraphs: [
+      'Differentiation measures how fast a function changes. The derivative f′(x) is the slope of the tangent to the curve at a point, or the instant rate of change of one quantity with respect to another. Almost every calculus question in NIMCET, from tangents to maxima and minima, starts with finding a derivative, so speed and accuracy with the basic rules are essential.',
+      'Learn the derivatives of the standard functions (powers, trigonometric, exponential and logarithmic) by heart, then combine them with four rules. The sum rule differentiates term by term. The product rule handles two functions multiplied together, the quotient rule handles one divided by another, and the chain rule handles a function inside another function, such as sin(3x²): differentiate the outer function, keep the inside the same, then multiply by the derivative of the inside. For implicit equations like x² + y² = 25, differentiate both sides with respect to x and treat y as a function of x.',
+      'Questions ask for dy/dx of products like x²·sin x, compositions like e^(2x+1), or the value of a derivative at a point. Parametric forms appear as dy/dx = (dy/dt)/(dx/dt). Logarithmic differentiation helps when the power itself contains x, as in xˣ. The most common mistakes are forgetting the chain-rule factor and getting the order in the quotient rule wrong: it is (bottom × derivative of top − top × derivative of bottom) over bottom squared.',
+    ],
+    keyPoints: [
+      'The derivative is the slope of the tangent at a point.',
+      'Chain rule: derivative of the outside × derivative of the inside.',
+      'Quotient rule order: (v·u′ − u·v′) / v².',
+      'Implicit: differentiate both sides; every y term gets a dy/dx.',
+      'Parametric: dy/dx = (dy/dt) ÷ (dx/dt).',
+      'For xˣ type functions, take logs first.',
+    ],
+    formulas: [
+      'd/dx(xⁿ) = n·xⁿ⁻¹,  d/dx(eˣ) = eˣ,  d/dx(ln x) = 1/x',
+      'd/dx(sin x) = cos x,  d/dx(cos x) = −sin x,  d/dx(tan x) = sec²x',
+      '(uv)′ = u′v + uv′',
+      '(u/v)′ = (u′v − uv′) / v²',
+      'd/dx f(g(x)) = f′(g(x)) · g′(x)',
+      'd/dx(aˣ) = aˣ ln a',
+    ],
+  },
+  'Calculus|Applications of Derivatives': {
+    paragraphs: [
+      'Once you can differentiate, the derivative becomes a tool for answering real questions about a curve: where it rises or falls, where it reaches its highest or lowest value, and what the equation of its tangent is. NIMCET asks these application questions often because they test understanding rather than memory, and they appear in both easy and difficult forms.',
+      'A function is increasing where f′(x) > 0 and decreasing where f′(x) < 0. Points where f′(x) = 0 are critical points, and they are candidates for maxima or minima. Use the second derivative test: if f″(x) < 0 at the point it is a maximum, and if f″(x) > 0 it is a minimum. For the greatest or least value on a closed interval, compare the function’s values at the critical points and at both end points. The tangent at (x₁, y₁) has slope m = f′(x₁), and the normal is perpendicular to it, with slope −1/m.',
+      'Typical problems: find the maximum value of 2x³ − 9x² + 12x on an interval, find where a function is increasing, find the equation of the tangent to y = x² at x = 2, or maximise the area of a rectangle with a fixed perimeter (the answer is always a square). Rate-of-change questions ask, for example, how fast the area of a circle grows when the radius grows at 2 cm/s. Always check the end points in interval questions, because the greatest value is often there and not at a critical point.',
+    ],
+    keyPoints: [
+      'f′(x) > 0 increasing, f′(x) < 0 decreasing.',
+      'f′(x) = 0 gives critical points; test them with f″(x).',
+      'f″ < 0 → maximum, f″ > 0 → minimum.',
+      'On a closed interval, also check both end points.',
+      'Normal slope = −1 / tangent slope.',
+      'Fixed perimeter → a square gives the largest rectangle area.',
+    ],
+    formulas: [
+      'Tangent: y − y₁ = f′(x₁)(x − x₁)',
+      'Normal: y − y₁ = −[1 / f′(x₁)](x − x₁)',
+      'Rate: dA/dt = (dA/dr)(dr/dt)',
+      'Circle: dA/dr = 2πr;  sphere: dV/dr = 4πr²',
+      'Approximation: f(x + Δx) ≈ f(x) + f′(x)Δx',
+    ],
+  },
+  'Calculus|Integration': {
+    paragraphs: [
+      'Integration is the reverse of differentiation. An indefinite integral finds a function whose derivative is the given function, plus a constant C. A definite integral, written with limits a and b, gives a number: the signed area under the curve between those limits. NIMCET includes several integration questions each year, mostly standard forms, substitution and definite integrals that can be simplified with properties.',
+      'Start by recognising standard results, such as the integral of xⁿ or of 1/x. When the integrand contains a function and its derivative, use substitution: let t be the inner function, replace dx, and the integral becomes standard. Integration by parts handles products like x·eˣ: pick u in the order Logarithmic, Inverse trig, Algebraic, Trigonometric, Exponential (the ILATE rule). For definite integrals, find the antiderivative F(x) and compute F(b) − F(a); no constant is needed.',
+      'Definite-integral properties save a lot of time. The integral of an odd function from −a to a is 0, and an even function gives twice the integral from 0 to a. The king property, replacing x with a + b − x, cracks many symmetric questions such as ∫₀^(π/2) sin x/(sin x + cos x) dx = π/4. Area questions ask for the region between a curve and the x-axis or between two curves: integrate (upper − lower). Do not forget that area is always taken as positive.',
+    ],
+    keyPoints: [
+      'Indefinite integrals need + C; definite integrals do not.',
+      'Use substitution when a function and its derivative both appear.',
+      'ILATE decides u in integration by parts.',
+      'Odd function over −a to a gives 0; even gives 2∫₀ᵃ.',
+      'King property: ∫ₐᵇ f(x) dx = ∫ₐᵇ f(a + b − x) dx.',
+      'Area between curves = ∫ (upper − lower) dx, taken positive.',
+    ],
+    formulas: [
+      '∫xⁿ dx = xⁿ⁺¹/(n + 1) + C  (n ≠ −1)',
+      '∫(1/x) dx = ln|x| + C,  ∫eˣ dx = eˣ + C',
+      '∫sin x dx = −cos x + C,  ∫cos x dx = sin x + C',
+      '∫u dv = uv − ∫v du',
+      '∫ₐᵇ f(x) dx = F(b) − F(a)',
+      '∫dx/(1 + x²) = tan⁻¹x + C',
+    ],
+  },
+  'Coordinate Geometry|Points & Distance': {
+    paragraphs: [
+      'Coordinate geometry describes points and shapes with numbers on the x–y plane. The most basic tools are the distance between two points, the point that divides a segment in a given ratio, and the area of a triangle from its corner coordinates. NIMCET uses these as direct questions and as the first step in harder problems on lines and conics, so they are worth learning to apply without hesitation.',
+      'The distance formula comes from Pythagoras: the horizontal and vertical gaps are the two shorter sides of a right triangle. The section formula gives the point that divides the segment from A to B internally in the ratio m : n, and the midpoint is the special case 1 : 1. The centroid of a triangle is the average of its three vertices. The area formula uses the coordinates directly; if the area comes out as zero, the three points are collinear, which is a quick test for lying on one line.',
+      'Expect questions like "find the point dividing (2, 3) and (8, 9) in the ratio 1 : 2", "find k if the points are collinear", or "what type of triangle do these points form". For the last type, compute all three side lengths: equal sides mean isosceles or equilateral, and if the squares satisfy Pythagoras it is right-angled. Keep signs carefully in the area formula and take the absolute value at the end, because area cannot be negative.',
+    ],
+    keyPoints: [
+      'Distance comes from Pythagoras on the x and y gaps.',
+      'The midpoint is the section formula with ratio 1 : 1.',
+      'Centroid = average of the three vertices.',
+      'Area = 0 means the three points are collinear.',
+      'Take the absolute value of the area at the end.',
+      'For triangle type, compare the three side lengths.',
+    ],
+    formulas: [
+      'd = √[(x₂ − x₁)² + (y₂ − y₁)²]',
+      'Section (m : n): ((mx₂ + nx₁)/(m + n), (my₂ + ny₁)/(m + n))',
+      'Midpoint: ((x₁ + x₂)/2, (y₁ + y₂)/2)',
+      'Centroid: ((x₁ + x₂ + x₃)/3, (y₁ + y₂ + y₃)/3)',
+      'Area = ½ |x₁(y₂ − y₃) + x₂(y₃ − y₁) + x₃(y₁ − y₂)|',
+    ],
+  },
+  'Coordinate Geometry|Straight Lines': {
+    paragraphs: [
+      'A straight line on the coordinate plane is described by its slope, which measures steepness, and one point on it, or by an equation like ax + by + c = 0. NIMCET regularly asks for the equation of a line, the angle between two lines, the distance from a point to a line, and conditions for lines to be parallel or perpendicular. These questions are short once the formulas are familiar.',
+      'Slope m = (y₂ − y₁)/(x₂ − x₁) = tan θ, where θ is the angle the line makes with the positive x-axis. Choose the form of equation that fits the information given: slope-intercept y = mx + c, point-slope through a known point, two-point form, or intercept form x/a + y/b = 1. For the general form ax + by + c = 0, the slope is −a/b. Parallel lines have equal slopes; perpendicular lines have slopes whose product is −1.',
+      'Common questions: the equation of a line through (1, 2) perpendicular to 3x − 4y + 5 = 0, the perpendicular distance from (3, 4) to that line, the distance between two parallel lines, or the intercepts a line cuts on the axes. To get a perpendicular line quickly, swap the x and y coefficients and change one sign: the perpendicular of 3x − 4y + 5 = 0 has the form 4x + 3y + k = 0. Then substitute the given point to find k.',
+    ],
+    keyPoints: [
+      'Slope = rise / run = tan θ; for ax + by + c = 0, slope = −a/b.',
+      'Parallel: equal slopes. Perpendicular: m₁ · m₂ = −1.',
+      'Perpendicular trick: swap the coefficients of x and y and change one sign.',
+      'Use the absolute value in distance formulas.',
+      'Intercept form x/a + y/b = 1 shows where the line cuts the axes.',
+      'A vertical line has no defined slope (x = constant).',
+    ],
+    formulas: [
+      'y − y₁ = m(x − x₁)',
+      'y = mx + c',
+      'x/a + y/b = 1',
+      'Distance from (x₁, y₁) to ax + by + c = 0: |ax₁ + by₁ + c| / √(a² + b²)',
+      'Between parallel lines: |c₁ − c₂| / √(a² + b²)',
+      'Angle between lines: tan θ = |(m₁ − m₂)/(1 + m₁m₂)|',
+    ],
+  },
+  'Coordinate Geometry|Circles & Conics': {
+    paragraphs: [
+      'Conic sections are the curves you get by cutting a cone: the circle, parabola, ellipse and hyperbola. Each has a standard equation, and most NIMCET questions ask you to read key features from that equation: the centre and radius of a circle, the focus and directrix of a parabola, or the eccentricity of an ellipse or hyperbola. It is one of the most important parts of the maths section.',
+      'A circle with centre (h, k) and radius r is (x − h)² + (y − k)² = r². In the general form x² + y² + 2gx + 2fy + c = 0, the centre is (−g, −f) and the radius is √(g² + f² − c). The parabola y² = 4ax opens to the right with focus (a, 0) and directrix x = −a. The ellipse x²/a² + y²/b² = 1 (with a > b) has eccentricity e < 1, and the hyperbola x²/a² − y²/b² = 1 has e > 1. The eccentricity tells you which conic you are looking at.',
+      'Typical questions: find the centre and radius of x² + y² − 4x + 6y − 3 = 0 (centre (2, −3), radius 4), find the focus of y² = 12x (focus (3, 0)), find the length of the latus rectum, or find e for 9x² + 16y² = 144. Always first divide to make the right side equal to 1 for ellipses and hyperbolas. A common trap is mixing up which denominator is a² when the larger value sits under y²; then the major axis is vertical.',
+    ],
+    keyPoints: [
+      'General circle: centre (−g, −f), radius √(g² + f² − c).',
+      'Eccentricity: circle 0, ellipse < 1, parabola = 1, hyperbola > 1.',
+      'y² = 4ax: focus (a, 0), directrix x = −a, latus rectum 4a.',
+      'Make the right side 1 before reading a and b.',
+      'In an ellipse, the larger denominator decides the major axis.',
+      'Ellipse: b² = a²(1 − e²); hyperbola: b² = a²(e² − 1).',
+    ],
+    formulas: [
+      '(x − h)² + (y − k)² = r²',
+      'x² + y² + 2gx + 2fy + c = 0',
+      'Parabola: y² = 4ax, latus rectum = 4a',
+      'Ellipse: x²/a² + y²/b² = 1, e = √(1 − b²/a²)',
+      'Hyperbola: x²/a² − y²/b² = 1, e = √(1 + b²/a²)',
+      'Latus rectum of ellipse/hyperbola: 2b²/a',
+    ],
+  },
+  'Probability & Statistics|Basic Probability': {
+    paragraphs: [
+      'Probability measures how likely an event is, on a scale from 0 (impossible) to 1 (certain). When all outcomes are equally likely, the probability of an event is the number of favourable outcomes divided by the total number of outcomes. NIMCET asks probability questions every year using coins, dice, cards and balls in a bag, and they combine naturally with the counting methods of permutations and combinations.',
+      'First write down the sample space, the set of all possible outcomes, and count it. Two coins give 4 outcomes, two dice give 36 and a standard deck has 52 cards. Then count only the outcomes that match the event. For selections such as "two balls drawn from a bag", use combinations for both the favourable and the total counts. The complement rule is often the fastest route: the probability of "at least one" is 1 minus the probability of "none".',
+      'Typical questions: the probability of a sum of 8 with two dice (5/36), of drawing a king or a heart from a deck (16/52 = 4/13, because the king of hearts must not be counted twice), or of getting at least one head in three tosses (1 − 1/8 = 7/8). Odds in favour are favourable : unfavourable, not favourable : total. Read carefully whether balls are drawn with or without replacement, because it changes the total for the second draw.',
+    ],
+    keyPoints: [
+      'P(E) = favourable outcomes ÷ total outcomes, between 0 and 1.',
+      'Two dice: 36 outcomes; a deck: 52 cards, 4 suits, 13 each.',
+      '"At least one" → use 1 − P(none).',
+      'Use combinations for drawing several items at once.',
+      'Do not double-count overlaps, such as the king of hearts.',
+      'Odds in favour = favourable : unfavourable.',
+    ],
+    formulas: [
+      'P(E) = n(E) / n(S)',
+      'P(E′) = 1 − P(E)',
+      'P(A ∪ B) = P(A) + P(B) − P(A ∩ B)',
+      'Odds in favour a : b → P(E) = a / (a + b)',
+      'Drawing r from n: total = ⁿCᵣ',
+    ],
+  },
+  'Probability & Statistics|Combined Events': {
+    paragraphs: [
+      'Combined-event questions involve more than one event at a time: two draws in a row, two people solving a problem, or an event that depends on another. The key ideas are independent events, where one result does not affect the other, conditional probability, where you already know something has happened, and the binomial distribution for repeated trials. NIMCET often puts these into its harder probability questions.',
+      'If A and B are independent, the probability that both happen is P(A) × P(B). For dependent events, multiply P(A) by the probability of B given that A has already happened, P(B|A). Conditional probability restricts the sample space: P(A|B) = P(A ∩ B)/P(B). Bayes’ theorem reverses a conditional probability, for example finding which bag a red ball most likely came from. For n independent trials, each with success probability p, the binomial formula gives the probability of exactly r successes.',
+      'Typical questions: A hits a target with probability 1/3 and B with 1/4, so the probability that the target is hit is 1 − (2/3)(3/4) = 1/2. Another type: two cards drawn without replacement are both aces, (4/52)(3/51). Binomial questions ask for exactly 2 heads in 5 tosses, ⁵C₂(1/2)⁵ = 10/32. Mutually exclusive events cannot happen together, which is different from independent events; mixing the two is a classic mistake.',
+    ],
+    keyPoints: [
+      'Independent: P(A ∩ B) = P(A) · P(B).',
+      'Without replacement, the second probability changes.',
+      'Conditional probability shrinks the sample space to B.',
+      'Mutually exclusive ≠ independent.',
+      '"Target is hit" = 1 − P(everyone misses).',
+      'Binomial needs fixed n, two outcomes and the same p each time.',
+    ],
+    formulas: [
+      'P(A|B) = P(A ∩ B) / P(B)',
+      'P(A ∩ B) = P(A) · P(B|A)',
+      'Bayes: P(Eᵢ|A) = P(Eᵢ)P(A|Eᵢ) / Σ P(Eⱼ)P(A|Eⱼ)',
+      'Binomial: P(X = r) = ⁿCᵣ pʳ qⁿ⁻ʳ,  q = 1 − p',
+      'Binomial mean = np, variance = npq',
+    ],
+  },
+  'Probability & Statistics|Averages & Spread': {
+    paragraphs: [
+      'Statistics summarises data with two kinds of measure. Measures of centre, the mean, median and mode, tell you the typical value. Measures of spread, the range, variance and standard deviation, tell you how far values are scattered around that centre. NIMCET asks short, calculation-based questions on these, often with a small twist such as adding a constant to every value.',
+      'The mean is the sum divided by the count. The median is the middle value after sorting: for an odd count it is the single middle value, and for an even count it is the average of the two middle values. The mode is the value that appears most often. Variance is the average of the squared distances from the mean, and the standard deviation is its square root, in the same units as the data. For grouped data, use the class mid-points and frequencies.',
+      'Learn the effect of changes, because NIMCET loves them. Adding a constant k to every value adds k to the mean, median and mode, but does not change the variance or standard deviation. Multiplying every value by k multiplies the mean and standard deviation by k, and the variance by k². Another common question gives the mean of a group and asks for a missing value, or combines the means of two groups using a weighted average. The empirical relation Mode ≈ 3 Median − 2 Mean links the three averages for moderately skewed data.',
+    ],
+    keyPoints: [
+      'Sort the data before finding the median.',
+      'Adding k shifts the averages, not the spread.',
+      'Multiplying by k scales SD by k and variance by k².',
+      'Standard deviation is the square root of variance.',
+      'Combined mean is a weighted average, not a simple average.',
+      'Mode ≈ 3 Median − 2 Mean (empirical).',
+    ],
+    formulas: [
+      'Mean x̄ = Σx / n,  grouped: Σfx / Σf',
+      'Variance σ² = Σ(x − x̄)² / n = Σx²/n − x̄²',
+      'SD σ = √variance',
+      'Combined mean = (n₁x̄₁ + n₂x̄₂) / (n₁ + n₂)',
+      'Coefficient of variation = (σ / x̄) × 100',
+      'Mode ≈ 3 Median − 2 Mean',
+    ],
+  },
+}
+
+export default maths

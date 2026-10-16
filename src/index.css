@@ -157,6 +157,29 @@
     }
   }
 
+  /* Printing (notes as PDF): black on white in both modes, no dot grid */
+  @media print {
+    html,
+    html[data-mode='exam'] {
+      --color-ink: #000;
+      --color-paper: #fff;
+      --color-surface: #fff;
+      --color-line: #bbb;
+      --color-muted: #444;
+      --color-board: #fff;
+      color-scheme: light;
+    }
+    body {
+      background: none;
+    }
+    .panel {
+      color: #000 !important;
+    }
+    .panel * {
+      color: #000 !important;
+    }
+  }
+
   /* Keyboard users always see where they are (mouse clicks show no ring) */
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--color-ink);

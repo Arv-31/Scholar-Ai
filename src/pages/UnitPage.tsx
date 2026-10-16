@@ -170,6 +170,12 @@ export default function UnitPage() {
         </aside>
       </div>
 
+      {live.subtopics.length > 0 && (
+        <Reveal index={4}>
+          <SubtopicsBlock subtopics={live.subtopics} />
+        </Reveal>
+      )}
+
       <Reveal index={4}>
         <VideosBlock
           videos={videos}
@@ -552,6 +558,34 @@ function WeakSpots({
           ))}
         </ul>
       )}
+    </section>
+  )
+}
+
+// Learn first: every subtopic has written notes (3 short paragraphs, key points, formulas).
+function SubtopicsBlock({
+  subtopics,
+}: {
+  subtopics: { id: string; name: string; mastery: number }[]
+}) {
+  return (
+    <section>
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="text-2xl font-semibold">Subtopics</h2>
+        <span className="eyebrow">Learn · then watch · then practise</span>
+      </div>
+      <ul className="card divide-y divide-line overflow-hidden">
+        {subtopics.map((s, i) => (
+          <li key={s.id}>
+            <Link to={`/exam/notes/${s.id}`} className="row-link group gap-4 px-5 py-4">
+              <span className="nums w-6 text-sm text-muted">{String(i + 1).padStart(2, '0')}</span>
+              <PaperIcon value={s.mastery} size={22} />
+              <span className="min-w-0 flex-1 font-medium">{s.name}</span>
+              <span className="nums text-sm text-muted group-hover:text-ink">Read notes →</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

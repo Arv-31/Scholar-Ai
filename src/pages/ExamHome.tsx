@@ -82,9 +82,14 @@ function Syllabus({ examId, onChangeExam }: { examId: string; onChangeExam: () =
         eyebrow="Exam mode · Subjects"
         title={exam?.code ?? 'Your exam'}
         action={
-          <button type="button" className="btn-ghost" onClick={onChangeExam}>
-            Change exam
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/exam/syllabus" className="btn-primary py-2! text-sm">
+              Syllabus map
+            </Link>
+            <button type="button" className="btn-ghost" onClick={onChangeExam}>
+              Change exam
+            </button>
+          </div>
         }
       />
 

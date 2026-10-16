@@ -86,3 +86,63 @@ export async function getSubjectUnits(subjectId: string): Promise<Unit[]> {
   if (error) throw new Error('Could not load the units.')
   return data as Unit[]
 }
+
+export type SubtopicDetail = {
+  id: string
+  name: string
+  unit: { id: string; name: string }
+  subject: string
+  exam: { id: string; code: string; name: string }
+  siblings: { id: string; name: string }[] // all subtopics of the same unit, in order
+}
+
+// One subtopic with its unit, subject and exam (for the notes page).
+export async function getSubtopic(subtopicId: string): Promise<SubtopicDetail | null> {
+  const { data, error } = await supabase
+    .from('subtopics')
+    .select('id, name, units(id, name, subjects(name, exams(id, code, name)))')
+    .eq('id', subtopicId)
+    .maybeSingle()
+  if (error || !data) return null
+  const row = data as unknown as {
+    id: string
+    name: string
+    units: { id: string; name: string; subjects: { name: string; exams: SubtopicDetail['exam'] } }
+  }
+  const siblings = await supabase
+    .from('subtopics')
+    .select('id, name')
+    .eq('unit_id', row.units.id)
+    .order('sort_order')
+  return {
+    id: row.id,
+    name: row.name,
+    unit: { id: row.units.id, name: row.units.name },
+    subject: row.units.subjects.name,
+    exam: row.units.subjects.exams,
+    siblings: (siblings.data ?? []) as { id: string; name: string }[],
+  }
+}
+
+// Every subtopic of one exam, keyed by "Unit|Subtopic" (to link the syllabus map to notes).
+export async function getExamSubtopicIds(
+  subjects: SubjectWithUnits[],
+): Promise<Record<string, string>> {
+  const units = subjects.flatMap((s) => s.units)
+  if (units.length === 0) return {}
+  const { data, error } = await supabase
+    .from('subtopics')
+    .select('id, name, unit_id')
+    .in(
+      'unit_id',
+      units.map((u) => u.id),
+    )
+  if (error) return {}
+  const unitName = new Map(units.map((u) => [u.id, u.name]))
+  return Object.fromEntries(
+    (data as { id: string; name: string; unit_id: string }[]).map((s) => [
+      `${unitName.get(s.unit_id)}|${s.name}`,
+      s.id,
+    ]),
+  )
+}
