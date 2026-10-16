@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import ProgressBar from '../components/ProgressBar'
 import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
 import { useLoad } from '../hooks/useLoad'
@@ -7,7 +7,7 @@ import { PASS_PERCENT, scoreQuiz, type QuizQuestion } from '../lib/quiz'
 import { getUnit } from '../services/examService'
 import { explainMistake } from '../services/aiService'
 import { AppError, errorMessage } from '../services/functionsClient'
-import { getQuestions, getSubtopics, saveAttempt } from '../services/quizService'
+import { getQuestions, getQuickCheck, getSubtopics, saveAttempt } from '../services/quizService'
 import type { Round, Subtopic } from '../types/database'
 
 const LETTERS = ['A', 'B', 'C', 'D']
@@ -16,17 +16,20 @@ const LETTERS = ['A', 'B', 'C', 'D']
 export default function QuizPage() {
   const { unitId = '', round: roundParam } = useParams()
   const round: Round = roundParam === '2' ? 2 : roundParam === '3' ? 3 : 1
+  // ?quick=1 = 3-question check after a video: practice only, never saved as a round
+  const [params] = useSearchParams()
+  const quick = params.get('quick') === '1'
   // Bumping `attempt` reloads the page data, which also gives round 3 fresh questions.
   const [attempt, setAttempt] = useState(0)
 
   const page = useLoad(async () => {
     const [unit, questions, subtopics] = await Promise.all([
       getUnit(unitId),
-      getQuestions(unitId, round),
+      quick ? getQuickCheck(unitId) : getQuestions(unitId, round),
       getSubtopics(unitId),
     ])
     return { unit, questions, subtopics }
-  }, `${unitId}-${round}-${attempt}`)
+  }, `${unitId}-${round}-${attempt}-${quick}`)
 
   const backTo = `/exam/unit/${unitId}`
 
@@ -63,7 +66,8 @@ export default function QuizPage() {
   return (
     <Quiz
       key={attempt}
-      title={`${page.data.unit?.name ?? 'Unit'} · Round ${round}`}
+      title={`${page.data.unit?.name ?? 'Unit'} · ${quick ? 'Quick check' : `Round ${round}`}`}
+      quick={quick}
       questions={page.data.questions}
       subtopics={page.data.subtopics}
       unitId={unitId}
@@ -82,9 +86,19 @@ type QuizProps = {
   round: Round
   backTo: string
   onRetry: () => void
+  quick?: boolean
 }
 
-function Quiz({ title, questions, subtopics, unitId, round, backTo, onRetry }: QuizProps) {
+function Quiz({
+  title,
+  questions,
+  subtopics,
+  unitId,
+  round,
+  backTo,
+  onRetry,
+  quick = false,
+}: QuizProps) {
   const [index, setIndex] = useState(0)
   const [chosen, setChosen] = useState<number[]>([])
   const [finished, setFinished] = useState(false)
@@ -102,6 +116,7 @@ function Quiz({ title, questions, subtopics, unitId, round, backTo, onRetry }: Q
 
   async function finish() {
     setFinished(true)
+    if (quick) return // practice only: not saved, so it can never complete a unit
     try {
       await saveAttempt(unitId, round, questions, chosen)
     } catch (error) {
@@ -129,9 +144,11 @@ function Quiz({ title, questions, subtopics, unitId, round, backTo, onRetry }: Q
               {result.score} of {result.total} correct
             </p>
             <p className="mt-4 text-sm text-white/60">
-              {result.passed
-                ? 'Unit complete. Nice work.'
-                : `Score ${PASS_PERCENT}% or more to complete this unit. Look at the answers below and try again.`}
+              {quick
+                ? 'Quick check: practice only, it does not count towards completing the unit.'
+                : result.passed
+                  ? 'Unit complete. Nice work.'
+                  : `Score ${PASS_PERCENT}% or more to complete this unit. Look at the answers below and try again.`}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button type="button" className="btn-primary py-2! text-sm" onClick={onRetry}>

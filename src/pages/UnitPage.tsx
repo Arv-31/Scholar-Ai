@@ -390,6 +390,15 @@ function VideosBlock({
             <div className="border-t border-ink p-4">
               <p className="font-medium">{current.title}</p>
               <p className="text-xs text-muted">{current.channel_title}</p>
+              {/* watch-then-check: once 80% is watched, offer a 3-question practice check */}
+              {(data.watch[current.id] ?? 0) >= 80 && (
+                <Link
+                  to={`/exam/unit/${current.unit_id}/quiz/1?quick=1`}
+                  className="btn-primary mt-3 py-2! text-sm"
+                >
+                  Quick check · 3 questions
+                </Link>
+              )}
             </div>
           </div>
 

@@ -134,3 +134,13 @@ export async function getWeakSpots(unitId: string, limit = 5): Promise<WeakSpot[
   }
   return spots.slice(0, limit)
 }
+
+// Watch-then-check: 3 questions picked at random from the unit's rounds 1 and 2.
+export async function getQuickCheck(unitId: string): Promise<QuizQuestion[]> {
+  const [one, two] = await Promise.all([getRoundQuestions(unitId, 1), getRoundQuestions(unitId, 2)])
+  return [...one, ...two]
+    .map((q) => ({ q, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .slice(0, 3)
+    .map(({ q }) => q)
+}
