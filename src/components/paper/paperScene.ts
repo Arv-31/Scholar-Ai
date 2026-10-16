@@ -4,8 +4,8 @@
 // 1. One flat sheet is cut into a fine grid of points (vertices).
 // 2. At 0% the sheet is spread over a whole ball and creased by fold planes cutting through it,
 //    so it is a closed, crushed paper ball that looks real from every side (it slowly turns).
-// 3. As progress grows it opens into a sheet curled around a ball that keeps getting bigger,
-//    so the sheet uncurls, until at 100% it is flat.
+// 3. As progress grows the ball is pressed into a thick crumpled pad (still closed on every
+//    side), then its corners fold out until, at 100%, it is one flat sheet.
 // 4. Straight, narrow fold lines give sharp creases; they fade away as the paper flattens.
 // Drag rotates it in place (like a globe). It never moves, pans or zooms.
 import * as THREE from 'three'
@@ -21,7 +21,6 @@ const SHEET_H = 2
 const SHEET_W = SHEET_H * 1.4
 const SEG_X = 250 // fine enough for crisp fold lines (each crease is only a few points wide)
 const SEG_Y = 178
-const BALL_RADIUS = 0.46 // size of the ball the sheet curls around as it starts to open
 const CRUSHED_RADIUS = 0.6 // size of the fully crushed ball at 0%
 
 export function createPaperScene(container: HTMLElement, options: Options): PaperHandle {
@@ -160,27 +159,22 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
 
   function applyProgress(p: number) {
     const array = position.array as Float32Array
-    // radius of the ball the sheet curls around: small at 0%, huge (= flat) at 100%
-    const wrap = BALL_RADIUS / Math.pow(1 - 0.999 * p, 1.6)
-    const depth = 0.5 * Math.pow(1 - p, 1.2) // crease strength
-    // keep the ball centred (so it spins in place); slide back to z = 0 as it flattens
-    const centre = wrap * smoothstep(0, 0.7, p)
-    const open = smoothstep(0, 0.4, p) // 0 = closed crushed ball, 1 = curling sheet
+    // 1) 0-45%: the closed ball is pressed flatter and wider into a thick crumpled pad.
+    //    Squashing a closed shape keeps it closed, so no side ever shows an opening.
+    const press = smoothstep(0, 0.45, p)
+    const widen = 1 + 0.35 * press
+    const thin = 1 - 0.8 * press
+    // 2) 35-100%: the pad's corners fold out until it is one flat sheet.
+    const open = smoothstep(0.35, 1, p)
+    const depth = 0.5 * Math.pow(1 - p, 1.2) // crease strength on the opening sheet
     for (let i = 0; i < count; i++) {
-      const theta = baseX[i] / wrap
-      const phi = baseY[i] / wrap
-      // point on the ball, and the direction pointing out of it
-      const nx = Math.sin(theta) * Math.cos(phi)
-      const ny = Math.sin(phi)
-      const nz = Math.cos(theta) * Math.cos(phi)
-      const push = crease[i] * depth + wrinkle[i]
-      // the curling sheet, blended in from the closed crushed ball during the first ~40%
-      const sx = nx * (wrap + push)
-      const sy = ny * (wrap + push)
-      const sz = nz * (wrap + push) - centre
-      array[i * 3] = ball[i * 3] + (sx - ball[i * 3]) * open
-      array[i * 3 + 1] = ball[i * 3 + 1] + (sy - ball[i * 3 + 1]) * open
-      array[i * 3 + 2] = ball[i * 3 + 2] + (sz - ball[i * 3 + 2]) * open
+      const padX = ball[i * 3] * widen
+      const padY = ball[i * 3 + 1] * widen
+      const padZ = ball[i * 3 + 2] * thin
+      const flatZ = crease[i] * depth + wrinkle[i]
+      array[i * 3] = padX + (baseX[i] - padX) * open
+      array[i * 3 + 1] = padY + (baseY[i] - padY) * open
+      array[i * 3 + 2] = padZ + (flatZ - padZ) * open
     }
     // darken the folds while crushed; the shading fades as the sheet flattens
     const colorArray = geometry.attributes.color.array as Float32Array
