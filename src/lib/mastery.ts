@@ -4,6 +4,9 @@
 // mastery = 50% average video watch + 50% best quiz score, always using best values,
 // so it never goes backwards. If a unit has no videos yet, the quiz counts for all of it.
 
+// A paper that has fully unfolded becomes an achievement on the Progress page.
+export const ACHIEVED_PERCENT = 100
+
 export type MasteryInput = {
   videoWatch: number[] // watch % (0-100) for each video of the unit; 0 if not started
   bestQuizPercent: number | null // best % over all rounds, null if no attempts

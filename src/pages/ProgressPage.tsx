@@ -1,13 +1,17 @@
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
+import PaperIcon from '../components/paper/PaperIcon'
 import ProgressBar from '../components/ProgressBar'
 import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
 import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
 import { lastDays, localDay, shortDate } from '../lib/dates'
+import { ACHIEVED_PERCENT, masteryPercent } from '../lib/mastery'
 import { PASS_PERCENT } from '../lib/quiz'
 import { liveStreak } from '../lib/streak'
 import { getProgressOverview, WATCHED_PERCENT } from '../services/progressService'
+import type { SubjectWithUnits } from '../services/examService'
+import type { UnitProgress } from '../types/database'
 
 // Progress analytics: units, scores, streak history and recent quiz attempts.
 export default function ProgressPage() {
@@ -18,9 +22,11 @@ export default function ProgressPage() {
   const page = useLoad(() => getProgressOverview(examId, today), `${examId}-${today}`)
 
   if (!profile || page.loading) return <Loading />
-  if (page.error || !page.data) return <ErrorNote message={page.error ?? 'Could not load'} onRetry={page.reload} />
+  if (page.error || !page.data)
+    return <ErrorNote message={page.error ?? 'Could not load'} onRetry={page.reload} />
 
-  const { exam, subjects, unitProgress, attempts, videosWatched, completionCounts } = page.data
+  const { exam, subjects, unitProgress, attempts, videosWatched, completionCounts, watchByUnit } =
+    page.data
   const units = subjects.flatMap((s) => s.units)
   const completed = units.filter((u) => unitProgress[u.id]?.completed).length
   const tried = units.filter((u) => unitProgress[u.id])
@@ -44,7 +50,11 @@ export default function ProgressPage() {
         <StatTile
           label="Average best score"
           value={averageBest === null ? '—' : `${averageBest}%`}
-          note={tried.length ? `Across ${tried.length} unit${tried.length === 1 ? '' : 's'}` : 'No quizzes yet'}
+          note={
+            tried.length
+              ? `Across ${tried.length} unit${tried.length === 1 ? '' : 's'}`
+              : 'No quizzes yet'
+          }
           dot="bg-green"
         />
         <StatTile
@@ -60,6 +70,10 @@ export default function ProgressPage() {
           dot="bg-green"
         />
       </section>
+
+      {exam && (
+        <Achievements subjects={subjects} unitProgress={unitProgress} watchByUnit={watchByUnit} />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Subjects */}
@@ -91,7 +105,10 @@ export default function ProgressPage() {
                         {done}/{total}
                       </span>
                     </div>
-                    <ProgressBar value={total ? (done / total) * 100 : 0} label={`${subject.name}: ${done} of ${total} units`} />
+                    <ProgressBar
+                      value={total ? (done / total) * 100 : 0}
+                      label={`${subject.name}: ${done} of ${total} units`}
+                    />
                   </li>
                 )
               })}
@@ -114,7 +131,10 @@ export default function ProgressPage() {
         </div>
         {attempts.length === 0 ? (
           <div className="px-6 pb-6">
-            <EmptyState title="No quizzes yet" text="Open any unit in Exam mode and start Round 1." />
+            <EmptyState
+              title="No quizzes yet"
+              text="Open any unit in Exam mode and start Round 1."
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -135,20 +155,26 @@ export default function ProgressPage() {
                         {attempt.unit_name}
                       </Link>
                     </td>
-                    <td className="nums px-3 py-3 text-muted">{attempt.round === 3 ? '3 · AI' : attempt.round}</td>
+                    <td className="nums px-3 py-3 text-muted">
+                      {attempt.round === 3 ? '3 · AI' : attempt.round}
+                    </td>
                     <td className="nums px-3 py-3 text-right">
                       <span className="text-muted">
                         {attempt.score}/{attempt.total}
                       </span>{' '}
                       <span
                         className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          attempt.percent >= PASS_PERCENT ? 'bg-green-soft text-green' : 'bg-ember-soft text-ember'
+                          attempt.percent >= PASS_PERCENT
+                            ? 'bg-green-soft text-green'
+                            : 'bg-ember-soft text-ember'
                         }`}
                       >
                         {Math.round(attempt.percent)}%
                       </span>
                     </td>
-                    <td className="nums px-6 py-3 text-right text-muted">{shortDate(attempt.created_at)}</td>
+                    <td className="nums px-6 py-3 text-right text-muted">
+                      {shortDate(attempt.created_at)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -160,7 +186,114 @@ export default function ProgressPage() {
   )
 }
 
-function StatTile({ label, value, note, dot }: { label: string; value: string; note: string; dot: string }) {
+// Every paper that has fully unfolded is pinned here as a flat sheet.
+// Until the first one, it shows the papers closest to unfolding.
+function Achievements({
+  subjects,
+  unitProgress,
+  watchByUnit,
+}: {
+  subjects: SubjectWithUnits[]
+  unitProgress: Record<string, UnitProgress>
+  watchByUnit: Record<string, number[]>
+}) {
+  const papers = subjects.flatMap((subject) =>
+    subject.units.map((unit) => ({
+      id: unit.id,
+      name: unit.name,
+      subject: subject.name,
+      mastery: masteryPercent({
+        videoWatch: watchByUnit[unit.id] ?? [],
+        bestQuizPercent: unitProgress[unit.id]?.best_percent ?? null,
+      }),
+    })),
+  )
+  const earned = papers.filter((p) => p.mastery >= ACHIEVED_PERCENT)
+  const closest = papers
+    .filter((p) => p.mastery > 0 && p.mastery < ACHIEVED_PERCENT)
+    .sort((a, b) => b.mastery - a.mastery)
+    .slice(0, 3)
+
+  return (
+    <section className="card p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Achievements</h2>
+          <p className="text-sm text-muted">
+            A unit’s paper lands here once it is fully unfolded: every video watched and a perfect
+            quiz.
+          </p>
+        </div>
+        <span className="nums eyebrow">
+          {earned.length}/{papers.length} papers
+        </span>
+      </div>
+
+      {earned.length > 0 ? (
+        <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {earned.map((paper, i) => (
+            <li key={paper.id}>
+              <Link
+                to={`/exam/unit/${paper.id}`}
+                className="group block border border-ink bg-[#fbf9f3] p-4 text-[#14161a] shadow-[3px_3px_0_var(--color-ink)] transition hover:-translate-y-0.5"
+                style={{
+                  rotate: `${[-2, 1.5, -1, 2, -1.5][i % 5]}deg`,
+                  ['--color-ink' as string]: '#14161a', // paper stays dark-inked in Exam mode too
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="mx-auto -mt-6 mb-2 block h-3 w-3 rounded-full border border-ink bg-ember"
+                />
+                <PaperIcon value={100} size={56} />
+                <span className="mt-2 block text-sm leading-snug font-semibold">{paper.name}</span>
+                <span className="mt-0.5 block truncate text-xs text-[#5d6068]">
+                  {paper.subject}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="mt-5">
+          <p className="text-sm text-muted">
+            No papers unfolded yet.{closest.length > 0 && ' Closest so far:'}
+          </p>
+          {closest.length > 0 && (
+            <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+              {closest.map((paper) => (
+                <li key={paper.id}>
+                  <Link
+                    to={`/exam/unit/${paper.id}`}
+                    className="group row-link gap-3 border border-line px-4 py-3"
+                  >
+                    <PaperIcon value={paper.mastery} size={30} />
+                    <span className="min-w-0 flex-1 truncate text-sm">{paper.name}</span>
+                    <span className="nums text-sm text-muted group-hover:text-ink">
+                      {paper.mastery}%
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function StatTile({
+  label,
+  value,
+  note,
+  dot,
+}: {
+  label: string
+  value: string
+  note: string
+  dot: string
+}) {
   return (
     <div className="card p-5">
       <p className="eyebrow flex items-center gap-2">
