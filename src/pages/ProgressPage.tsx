@@ -7,6 +7,7 @@ import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
 import { lastDays, localDay, shortDate } from '../lib/dates'
 import { ACHIEVED_PERCENT, type UnitMastery } from '../lib/mastery'
+import type { UnitProgress } from '../types/database'
 import { PASS_PERCENT } from '../lib/quiz'
 import { liveStreak } from '../lib/streak'
 import { getProgressOverview, WATCHED_PERCENT } from '../services/progressService'
@@ -69,6 +70,8 @@ export default function ProgressPage() {
           dot="bg-green"
         />
       </section>
+
+      {exam && <Heatmap subjects={subjects} unitProgress={unitProgress} />}
 
       {exam && <Achievements subjects={subjects} mastery={mastery} />}
 
@@ -180,6 +183,72 @@ export default function ProgressPage() {
         )}
       </section>
     </div>
+  )
+}
+
+// The whole syllabus at a glance: one square per unit, coloured by best quiz score.
+function Heatmap({
+  subjects,
+  unitProgress,
+}: {
+  subjects: SubjectWithUnits[]
+  unitProgress: Record<string, UnitProgress>
+}) {
+  const shade = (best: number | undefined) => {
+    if (best === undefined) return { cls: 'bg-line', label: 'not tried' }
+    if (best < 40) return { cls: 'bg-ember', label: 'weak' }
+    if (best < PASS_PERCENT) return { cls: 'bg-ember/50', label: 'nearly there' }
+    if (best < 80) return { cls: 'bg-green/60', label: 'passed' }
+    return { cls: 'bg-green', label: 'strong' }
+  }
+  return (
+    <section className="card p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Weak-topic map</h2>
+          <p className="text-sm text-muted">
+            Every unit, coloured by your best score. Tap one to open it.
+          </p>
+        </div>
+        <span className="flex flex-wrap items-center gap-3 text-xs text-muted">
+          {[
+            ['bg-line', 'Not tried'],
+            ['bg-ember', 'Weak'],
+            ['bg-ember/50', `Below ${PASS_PERCENT}%`],
+            ['bg-green/60', 'Passed'],
+            ['bg-green', '80%+'],
+          ].map(([cls, label]) => (
+            <span key={label} className="flex items-center gap-1.5">
+              <span className={`h-3 w-3 border border-ink ${cls}`} aria-hidden="true" />
+              {label}
+            </span>
+          ))}
+        </span>
+      </div>
+      <div className="mt-5 space-y-4">
+        {subjects.map((subject) => (
+          <div key={subject.id} className="grid gap-2 sm:grid-cols-[12rem_1fr] sm:items-center">
+            <p className="truncate text-sm font-medium">{subject.name}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {subject.units.map((unit) => {
+                const best = unitProgress[unit.id]?.best_percent
+                const { cls, label } = shade(best)
+                const text = `${unit.name}: ${best === undefined ? label : `${Math.round(best)}%, ${label}`}`
+                return (
+                  <Link
+                    key={unit.id}
+                    to={`/exam/unit/${unit.id}`}
+                    title={text}
+                    aria-label={text}
+                    className={`h-9 w-9 border border-ink transition hover:-translate-y-0.5 hover:shadow-[2px_2px_0_var(--color-ink)] ${cls}`}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
