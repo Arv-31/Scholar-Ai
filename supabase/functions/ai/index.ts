@@ -4,7 +4,8 @@ import { z } from 'npm:zod@4'
 import { admin, getUser } from '../_shared/auth.ts'
 import { callAi, NoKeyError, parseJson } from '../_shared/callAi.ts'
 import { corsHeaders, fail, json } from '../_shared/cors.ts'
-import { ProviderError } from '../_shared/providers/types.ts'
+import { classifyGeminiError } from '../_shared/geminiErrors.ts'
+import { GeminiError, ProviderError } from '../_shared/providers/types.ts'
 
 const ChatInput = z.object({
   task: z.literal('chat'),
@@ -59,8 +60,10 @@ Deno.serve(async (req) => {
     if (error instanceof NoKeyError) {
       return fail('NO_KEY', 'Add your Gemini key in Settings to use this.')
     }
-    if (error instanceof ProviderError && (error.status === 400 || error.status === 403)) {
-      return fail('BAD_KEY', 'Your Gemini key was rejected. Check it in Settings.')
+    // Gemini said no: use Google's real reason to pick the right message.
+    if (error instanceof GeminiError) {
+      const failure = classifyGeminiError(error)
+      return fail(failure.code, failure.message, failure.httpStatus)
     }
     if (error instanceof ProviderError && error.status === 429) {
       return fail('RATE_LIMIT', 'The AI is busy or your key hit its limit. Try again in a minute.', 429)

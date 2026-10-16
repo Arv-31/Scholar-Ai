@@ -1,7 +1,7 @@
 import { AI_ROUTES, type AiTask } from './aiRouting.ts'
 import { getGeminiKey } from './auth.ts'
 import { callClaude } from './providers/claude.ts'
-import { callGemini } from './providers/gemini.ts'
+import { callGemini, isGeminiBusy } from './providers/gemini.ts'
 import type { ChatMessage } from './providers/types.ts'
 import { retrieve } from './retrieve.ts'
 
@@ -35,7 +35,17 @@ export async function callAi(input: CallInput): Promise<string> {
 
   // 3. Call the provider
   const request = { model: route.model, apiKey, system, messages: input.messages, json: input.json }
-  return route.provider === 'gemini' ? callGemini(request) : callClaude(request)
+  if (route.provider === 'claude') return callClaude(request)
+
+  // Gemini: main model first; if it stays busy, try each backup model in turn.
+  const models = [route.model, ...(route.fallbacks ?? [])]
+  for (let i = 0; ; i++) {
+    try {
+      return await callGemini({ ...request, model: models[i] })
+    } catch (error) {
+      if (!isGeminiBusy(error) || i === models.length - 1) throw error
+    }
+  }
 }
 
 // Models sometimes wrap JSON in ``` fences. This strips them before parsing.

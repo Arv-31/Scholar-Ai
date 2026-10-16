@@ -21,10 +21,15 @@ export async function callFunction<T>(
   const { data, error } = await supabase.functions.invoke(name, { body })
 
   if (error) {
+    // The server answered, but with an error.
     if (error instanceof FunctionsHttpError) {
       const payload = await error.context.json().catch(() => null)
       if (payload?.error?.code) throw new AppError(payload.error.code, payload.error.message)
+      const status: number = error.context.status
+      if (status === 401) throw new AppError('UNAUTHORIZED', 'Please sign in again.')
+      throw new AppError('SERVER', `The server had a problem (error ${status}). Please try again.`)
     }
+    // The request never got an answer.
     throw new AppError('NETWORK', 'Could not reach the server. Check your connection.')
   }
 

@@ -17,11 +17,13 @@ export async function getUser(req: Request): Promise<User | null> {
 }
 
 // The student's own Gemini key (never sent back to the browser).
+// null = no key saved. A database problem throws instead, so it is not mistaken for "no key".
 export async function getGeminiKey(userId: string): Promise<string | null> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from('user_secrets')
     .select('gemini_api_key')
     .eq('user_id', userId)
     .maybeSingle()
+  if (error) throw new Error(`Could not read user_secrets: ${error.message}`)
   return data?.gemini_api_key ?? null
 }

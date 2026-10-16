@@ -1,14 +1,34 @@
 // THE one place that decides which AI answers which task.
-// To move the chatbot to Claude later: change `chat` to { provider: 'claude', model: 'claude-sonnet-5-5' }
-// and add the ANTHROPIC_API_KEY Edge Function secret. No page or service changes needed.
+// Chatbot: Claude (project key), quiz round 3 + books: Gemini (student's own key).
+// No page or service changes are needed to move a task to another provider.
 
 export type Provider = 'gemini' | 'claude'
 export type AiTask = 'chat' | 'quiz' | 'books'
 
-export type Route = { provider: Provider; model: string }
+// Gemini model name. Change it without a code release:
+//   supabase secrets set GEMINI_MODEL=<model name>
+export const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-3.8-flash'
+
+// Backup Gemini models, tried in order when the main one stays busy. Empty unless set:
+//   supabase secrets set GEMINI_FALLBACK_MODELS=<model a>,<model b>
+export const GEMINI_FALLBACK_MODELS = (Deno.env.get('GEMINI_FALLBACK_MODELS') ?? '')
+  .split(',')
+  .map((m) => m.trim())
+  .filter(Boolean)
+
+export type Route = { provider: Provider; model: string; fallbacks?: string[] }
+
+// Claude model for the chatbot. Change it without a code release:
+//   supabase secrets set CLAUDE_MODEL=<model name>
+export const CLAUDE_MODEL = Deno.env.get('CLAUDE_MODEL') || 'claude-opus-5-5'
+
+// The chatbot uses Claude as soon as the ANTHROPIC_API_KEY secret exists; until then it stays on Gemini.
+const chatRoute: Route = Deno.env.get('ANTHROPIC_API_KEY')
+  ? { provider: 'claude', model: CLAUDE_MODEL }
+  : { provider: 'gemini', model: GEMINI_MODEL, fallbacks: GEMINI_FALLBACK_MODELS }
 
 export const AI_ROUTES: Record<AiTask, Route> = {
-  chat: { provider: 'gemini', model: 'gemini-2.5-flash' },
-  quiz: { provider: 'gemini', model: 'gemini-2.5-flash' },
-  books: { provider: 'gemini', model: 'gemini-2.5-flash' },
+  chat: chatRoute,
+  quiz: { provider: 'gemini', model: GEMINI_MODEL, fallbacks: GEMINI_FALLBACK_MODELS },
+  books: { provider: 'gemini', model: GEMINI_MODEL, fallbacks: GEMINI_FALLBACK_MODELS },
 }

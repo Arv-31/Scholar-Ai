@@ -17,3 +17,15 @@ export class ProviderError extends Error {
     this.status = status
   }
 }
+
+// A Gemini error that keeps Google's own reason, so we can tell a bad key from other problems.
+export class GeminiError extends ProviderError {
+  googleStatus?: string // Google's error.status, e.g. 'PERMISSION_DENIED'
+  reason?: string // Google's error.details[].reason, e.g. 'API_KEY_INVALID'
+
+  constructor(message: string, status: number, googleStatus?: string, reason?: string) {
+    super(message, status)
+    this.googleStatus = googleStatus
+    this.reason = reason
+  }
+}

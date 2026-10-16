@@ -105,7 +105,7 @@ export default function ChatPage() {
             <div key={i} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                  message.role === 'user' ? 'bg-ink text-white' : 'border border-line bg-paper'
+                  message.role === 'user' ? 'bg-board text-white' : 'border border-line bg-paper'
                 }`}
               >
                 {message.content}
@@ -123,9 +123,9 @@ export default function ChatPage() {
           )}
 
           {error && (
-            <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
               {error.message}{' '}
-              {error.code === 'NO_KEY' || error.code === 'BAD_KEY' ? (
+              {['NO_KEY', 'BAD_KEY', 'NO_ACCESS'].includes(error.code) ? (
                 <Link to="/settings" className="font-medium underline">
                   Open Settings
                 </Link>
