@@ -16,6 +16,7 @@ export type Profile = {
 export type Exam = { id: string; code: string; name: string; sort_order: number }
 export type Subject = { id: string; exam_id: string; name: string; sort_order: number }
 export type Unit = { id: string; subject_id: string; name: string; sort_order: number }
+export type Subtopic = { id: string; unit_id: string; name: string; sort_order: number }
 
 export type Round = 1 | 2 | 3
 
@@ -34,6 +35,7 @@ export type AnswerRecord = {
   options: string[]
   chosen: number
   correct: number
+  subtopic_id?: string | null // saved from 16 Oct 2026; older answers are matched by question text
 }
 
 export type QuizAttempt = {

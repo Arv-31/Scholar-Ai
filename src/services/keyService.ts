@@ -11,7 +11,10 @@ const KeyResponse = z.object({ hint: z.string().nullable() })
 export const GeminiKeySchema = z
   .string()
   .trim()
-  .regex(/^[0-9A-Za-z_.-]{30,100}$/, 'That does not look like a full key. Copy it again from AI Studio.')
+  .regex(
+    /^[0-9A-Za-z_.-]{30,100}$/,
+    'That does not look like a full key. Copy it again from AI Studio.',
+  )
 
 export async function saveGeminiKey(key: string): Promise<string | null> {
   const result = await callFunction('gemini-key', { action: 'save', key: key.trim() }, KeyResponse)

@@ -6,8 +6,8 @@ import { useLoad } from '../hooks/useLoad'
 import { PASS_PERCENT, scoreQuiz, type QuizQuestion } from '../lib/quiz'
 import { getUnit } from '../services/examService'
 import { errorMessage } from '../services/functionsClient'
-import { getQuestions, saveAttempt } from '../services/quizService'
-import type { Round } from '../types/database'
+import { getQuestions, getSubtopics, saveAttempt } from '../services/quizService'
+import type { Round, Subtopic } from '../types/database'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
@@ -19,8 +19,12 @@ export default function QuizPage() {
   const [attempt, setAttempt] = useState(0)
 
   const page = useLoad(async () => {
-    const [unit, questions] = await Promise.all([getUnit(unitId), getQuestions(unitId, round)])
-    return { unit, questions }
+    const [unit, questions, subtopics] = await Promise.all([
+      getUnit(unitId),
+      getQuestions(unitId, round),
+      getSubtopics(unitId),
+    ])
+    return { unit, questions, subtopics }
   }, `${unitId}-${round}-${attempt}`)
 
   const backTo = `/exam/unit/${unitId}`
@@ -60,6 +64,7 @@ export default function QuizPage() {
       key={attempt}
       title={`${page.data.unit?.name ?? 'Unit'} · Round ${round}`}
       questions={page.data.questions}
+      subtopics={page.data.subtopics}
       unitId={unitId}
       round={round}
       backTo={backTo}
@@ -71,13 +76,14 @@ export default function QuizPage() {
 type QuizProps = {
   title: string
   questions: QuizQuestion[]
+  subtopics: Subtopic[]
   unitId: string
   round: Round
   backTo: string
   onRetry: () => void
 }
 
-function Quiz({ title, questions, unitId, round, backTo, onRetry }: QuizProps) {
+function Quiz({ title, questions, subtopics, unitId, round, backTo, onRetry }: QuizProps) {
   const [index, setIndex] = useState(0)
   const [chosen, setChosen] = useState<number[]>([])
   const [finished, setFinished] = useState(false)
@@ -144,6 +150,11 @@ function Quiz({ title, questions, unitId, round, backTo, onRetry }: QuizProps) {
             const right = chosen[i] === q.correctIndex
             return (
               <article key={i} className="card p-5">
+                {subtopics.find((t) => t.id === q.subtopicId) && (
+                  <p className="eyebrow mb-1.5">
+                    {subtopics.find((t) => t.id === q.subtopicId)!.name}
+                  </p>
+                )}
                 <p className="text-sm">
                   <span className="nums mr-2 text-muted">{String(i + 1).padStart(2, '0')}</span>
                   {q.question}

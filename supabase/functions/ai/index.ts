@@ -30,6 +30,7 @@ const QuizOutput = z.object({
         options: z.array(z.string().min(1)).length(4),
         correctIndex: z.number().int().min(0).max(3),
         explanation: z.string().optional(),
+        subtopic: z.string().optional(), // which subtopic the question is about (by name)
       }),
     )
     .length(5),
@@ -66,7 +67,11 @@ Deno.serve(async (req) => {
       return fail(failure.code, failure.message, failure.httpStatus)
     }
     if (error instanceof ProviderError && error.status === 429) {
-      return fail('RATE_LIMIT', 'The AI is busy or your key hit its limit. Try again in a minute.', 429)
+      return fail(
+        'RATE_LIMIT',
+        'The AI is busy or your key hit its limit. Try again in a minute.',
+        429,
+      )
     }
     console.error('ai function failed:', error instanceof Error ? error.message : 'unknown')
     return fail('AI_FAILED', 'The AI could not answer right now. Please try again.', 502)
@@ -108,11 +113,23 @@ async function quiz(userId: string, unitId: string) {
 
   const wrong = new Set<string>()
   for (const attempt of attempts ?? []) {
-    for (const answer of (attempt.answers ?? []) as { question: string; chosen: number; correct: number }[]) {
+    for (const answer of (attempt.answers ?? []) as {
+      question: string
+      chosen: number
+      correct: number
+    }[]) {
       if (answer.chosen !== answer.correct) wrong.add(answer.question)
     }
   }
   const weak = [...wrong].slice(0, 6)
+
+  // The unit's subtopics (empty before the subtopics migration), so each question can be tagged.
+  const { data: subtopicRows } = await admin
+    .from('subtopics')
+    .select('id, name')
+    .eq('unit_id', unitId)
+    .order('sort_order')
+  const subtopics = (subtopicRows ?? []) as { id: string; name: string }[]
 
   // deno-lint-ignore no-explicit-any
   const subject = (unit as any).subjects
@@ -121,7 +138,10 @@ async function quiz(userId: string, unitId: string) {
   const system =
     'You write multiple-choice questions for Indian entrance exams. Reply with JSON only, in this shape: ' +
     '{"questions":[{"question":"...","options":["a","b","c","d"],"correctIndex":0,"explanation":"one line"}]}. ' +
-    'Exactly 5 questions, exactly 4 options each, one correct answer, exam-level difficulty, no trick wording.'
+    'Exactly 5 questions, exactly 4 options each, one correct answer, exam-level difficulty, no trick wording.' +
+    (subtopics.length
+      ? ` Add "subtopic" to each question, copied exactly from this list: ${subtopics.map((t) => t.name).join('; ')}.`
+      : '')
 
   const prompt = weak.length
     ? `Topic: ${where}. The student got these wrong earlier, so focus on the same ideas (do not repeat them word for word):\n${weak.map((q) => `- ${q}`).join('\n')}`
@@ -134,7 +154,12 @@ async function quiz(userId: string, unitId: string) {
     messages: [{ role: 'user', content: prompt }],
     json: true,
   })
-  return QuizOutput.parse(parseJson(text))
+  const output = QuizOutput.parse(parseJson(text))
+  const idOf = (name?: string) =>
+    subtopics.find((t) => t.name.toLowerCase() === name?.trim().toLowerCase())?.id ?? null
+  return {
+    questions: output.questions.map(({ subtopic, ...q }) => ({ ...q, subtopicId: idOf(subtopic) })),
+  }
 }
 
 // ---------- Daily books (once per day, cached in daily_books) ----------
@@ -175,7 +200,9 @@ async function books(userId: string, day: string) {
     { user_id: userId, day, kind: 'fiction', ...picks.fiction },
     { user_id: userId, day, kind: 'non_fiction', ...picks.nonFiction },
   ]
-  await admin.from('daily_books').upsert(rows, { onConflict: 'user_id,day,kind', ignoreDuplicates: true })
+  await admin
+    .from('daily_books')
+    .upsert(rows, { onConflict: 'user_id,day,kind', ignoreDuplicates: true })
 
   const { data: saved } = await admin
     .from('daily_books')

@@ -1,24 +1,44 @@
 import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
 import { scoreQuiz, toAnswerRecords, type QuizQuestion } from '../lib/quiz'
-import type { AnswerRecord, QuizAttempt, Round } from '../types/database'
+import type { AnswerRecord, QuizAttempt, Round, Subtopic } from '../types/database'
 import { callFunction } from './functionsClient'
 
 // Rounds 1 and 2: the 5 saved questions for this unit.
 export async function getRoundQuestions(unitId: string, round: 1 | 2): Promise<QuizQuestion[]> {
-  const { data, error } = await supabase
-    .from('questions')
-    .select('question, options, correct_index')
-    .eq('unit_id', unitId)
-    .eq('round', round)
-    .order('sort_order')
-  if (error) throw new Error('Could not load the questions.')
+  const load = (columns: string) =>
+    supabase
+      .from('questions')
+      .select(columns)
+      .eq('unit_id', unitId)
+      .eq('round', round)
+      .order('sort_order')
+  let result = await load('question, options, correct_index, subtopic_id')
+  if (result.error) result = await load('question, options, correct_index') // before the subtopics migration
+  if (result.error) throw new Error('Could not load the questions.')
 
-  return (data as { question: string; options: string[]; correct_index: number }[]).map((q) => ({
+  type Row = {
+    question: string
+    options: string[]
+    correct_index: number
+    subtopic_id?: string | null
+  }
+  return (result.data as unknown as Row[]).map((q) => ({
     question: q.question,
     options: q.options,
     correctIndex: q.correct_index,
+    subtopicId: q.subtopic_id ?? null,
   }))
+}
+
+// The subtopics of a unit, in order. Empty if there are none (or before the migration).
+export async function getSubtopics(unitId: string): Promise<Subtopic[]> {
+  const { data, error } = await supabase
+    .from('subtopics')
+    .select('id, unit_id, name, sort_order')
+    .eq('unit_id', unitId)
+    .order('sort_order')
+  return error ? [] : (data as Subtopic[])
 }
 
 const Round3Response = z.object({
@@ -29,6 +49,7 @@ const Round3Response = z.object({
         options: z.array(z.string()).length(4),
         correctIndex: z.number().int().min(0).max(3),
         explanation: z.string().optional(),
+        subtopicId: z.string().nullable().optional(),
       }),
     )
     .min(1),
@@ -85,7 +106,7 @@ export async function listMyAttempts(options: { unitId?: string; limit?: number 
   )
 }
 
-export type WeakSpot = { question: string; answer: string }
+export type WeakSpot = { question: string; answer: string; subtopicId: string | null }
 
 // Questions the student got wrong in their latest rounds 1-2 attempts for a unit (newest first).
 export async function getWeakSpots(unitId: string, limit = 5): Promise<WeakSpot[]> {
@@ -104,7 +125,11 @@ export async function getWeakSpots(unitId: string, limit = 5): Promise<WeakSpot[
     for (const a of attempt.answers ?? []) {
       if (a.chosen === a.correct || seen.has(a.question)) continue
       seen.add(a.question)
-      spots.push({ question: a.question, answer: a.options[a.correct] ?? '' })
+      spots.push({
+        question: a.question,
+        answer: a.options[a.correct] ?? '',
+        subtopicId: a.subtopic_id ?? null,
+      })
     }
   }
   return spots.slice(0, limit)

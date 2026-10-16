@@ -8,9 +8,8 @@ import Reveal from '../components/Reveal'
 import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
 import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
-import { masteryPercent } from '../lib/mastery'
 import { getExam, getMyUnitProgress, getSyllabus } from '../services/examService'
-import { getMyWatchByUnit } from '../services/videoService'
+import { getMastery } from '../services/masteryService'
 import type { UnitProgress } from '../types/database'
 
 // Exam Mode home: choose an exam, then see its subjects and units with progress.
@@ -54,20 +53,20 @@ export default function ExamHome() {
 
 function Syllabus({ examId, onChangeExam }: { examId: string; onChangeExam: () => void }) {
   const page = useLoad(async () => {
-    const [exam, subjects, progress, watch] = await Promise.all([
+    const [exam, subjects, progress, mastery] = await Promise.all([
       getExam(examId),
       getSyllabus(examId),
       getMyUnitProgress(),
-      getMyWatchByUnit(),
+      getMastery(),
     ])
-    return { exam, subjects, progress, watch }
+    return { exam, subjects, progress, mastery }
   }, examId)
 
   if (page.loading) return <Loading />
   if (page.error || !page.data)
     return <ErrorNote message={page.error ?? 'Not found'} onRetry={page.reload} />
 
-  const { exam, subjects, progress, watch } = page.data
+  const { exam, subjects, progress, mastery } = page.data
   const units = subjects.flatMap((s) => s.units)
   const completed = units.filter((u) => progress[u.id]?.completed).length
   const percent = units.length ? (completed / units.length) * 100 : 0
@@ -132,10 +131,7 @@ function Syllabus({ examId, onChangeExam }: { examId: string; onChangeExam: () =
                       id={unit.id}
                       name={unit.name}
                       progress={progress[unit.id]}
-                      mastery={masteryPercent({
-                        videoWatch: watch[unit.id] ?? [],
-                        bestQuizPercent: progress[unit.id]?.best_percent ?? null,
-                      })}
+                      mastery={mastery[unit.id]?.mastery ?? 0}
                     />
                   </li>
                 ))}

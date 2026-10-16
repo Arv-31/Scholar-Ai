@@ -34,7 +34,8 @@ export async function callFunction<T>(
   }
 
   const parsed = schema.safeParse(data)
-  if (!parsed.success) throw new AppError('BAD_RESPONSE', 'Got an unexpected answer. Please try again.')
+  if (!parsed.success)
+    throw new AppError('BAD_RESPONSE', 'Got an unexpected answer. Please try again.')
   return parsed.data
 }
 

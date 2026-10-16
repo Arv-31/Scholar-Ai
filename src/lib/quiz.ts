@@ -9,6 +9,7 @@ export type QuizQuestion = {
   options: string[]
   correctIndex: number
   explanation?: string
+  subtopicId?: string | null
 }
 
 export type QuizResult = { score: number; total: number; percent: number; passed: boolean }
@@ -26,5 +27,6 @@ export function toAnswerRecords(questions: QuizQuestion[], chosen: number[]): An
     options: q.options,
     chosen: chosen[i],
     correct: q.correctIndex,
+    subtopic_id: q.subtopicId ?? null,
   }))
 }

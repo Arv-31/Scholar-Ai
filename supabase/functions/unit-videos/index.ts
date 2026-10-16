@@ -24,6 +24,33 @@ function decode(text: string): string {
     .replace(/&gt;/g, '>')
 }
 
+function words(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 3),
+  )
+}
+
+function matchSubtopic(
+  title: string,
+  subtopics: { id: string; name: string }[],
+  index: number,
+): string {
+  const titleWords = words(title)
+  let best = -1
+  let bestScore = 0
+  subtopics.forEach((subtopic, i) => {
+    const score = [...words(subtopic.name)].filter((w) => titleWords.has(w)).length
+    if (score > bestScore) {
+      bestScore = score
+      best = i
+    }
+  })
+  return subtopics[best >= 0 ? best : index % subtopics.length].id
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -34,7 +61,11 @@ Deno.serve(async (req) => {
   if (!parsed.success) return fail('BAD_INPUT', 'The request was not valid.')
   const { unitId } = parsed.data
 
-  const saved = await admin.from('unit_videos').select(COLUMNS).eq('unit_id', unitId).order('sort_order')
+  const saved = await admin
+    .from('unit_videos')
+    .select(COLUMNS)
+    .eq('unit_id', unitId)
+    .order('sort_order')
   if (saved.data && saved.data.length > 0) return json({ videos: saved.data })
 
   const apiKey = Deno.env.get('YOUTUBE_API_KEY')
@@ -77,16 +108,29 @@ Deno.serve(async (req) => {
   }
   const body = (await res.json()) as { items?: SearchItem[] }
 
+  // Each video is filed under the subtopic whose name shares the most words with its title
+  // (spread evenly if none match). Skipped if the unit has no subtopics.
+  const { data: subtopicRows } = await admin
+    .from('subtopics')
+    .select('id, name')
+    .eq('unit_id', unitId)
+    .order('sort_order')
+  const subtopics = (subtopicRows ?? []) as { id: string; name: string }[]
+
   const rows = (body.items ?? [])
     .filter((item) => item.id.videoId)
-    .map((item, index) => ({
-      unit_id: unitId,
-      youtube_video_id: item.id.videoId!,
-      title: decode(item.snippet.title),
-      channel_title: decode(item.snippet.channelTitle),
-      thumbnail_url: item.snippet.thumbnails?.medium?.url ?? null,
-      sort_order: index,
-    }))
+    .map((item, index) => {
+      const title = decode(item.snippet.title)
+      return {
+        unit_id: unitId,
+        youtube_video_id: item.id.videoId!,
+        title,
+        channel_title: decode(item.snippet.channelTitle),
+        thumbnail_url: item.snippet.thumbnails?.medium?.url ?? null,
+        sort_order: index,
+        ...(subtopics.length ? { subtopic_id: matchSubtopic(title, subtopics, index) } : {}),
+      }
+    })
 
   if (rows.length > 0) {
     await admin
@@ -94,6 +138,10 @@ Deno.serve(async (req) => {
       .upsert(rows, { onConflict: 'unit_id,youtube_video_id', ignoreDuplicates: true })
   }
 
-  const fresh = await admin.from('unit_videos').select(COLUMNS).eq('unit_id', unitId).order('sort_order')
+  const fresh = await admin
+    .from('unit_videos')
+    .select(COLUMNS)
+    .eq('unit_id', unitId)
+    .order('sort_order')
   return json({ videos: fresh.data ?? [] })
 })

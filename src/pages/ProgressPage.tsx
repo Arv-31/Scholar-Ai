@@ -6,12 +6,11 @@ import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
 import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
 import { lastDays, localDay, shortDate } from '../lib/dates'
-import { ACHIEVED_PERCENT, masteryPercent } from '../lib/mastery'
+import { ACHIEVED_PERCENT, type UnitMastery } from '../lib/mastery'
 import { PASS_PERCENT } from '../lib/quiz'
 import { liveStreak } from '../lib/streak'
 import { getProgressOverview, WATCHED_PERCENT } from '../services/progressService'
 import type { SubjectWithUnits } from '../services/examService'
-import type { UnitProgress } from '../types/database'
 
 // Progress analytics: units, scores, streak history and recent quiz attempts.
 export default function ProgressPage() {
@@ -25,7 +24,7 @@ export default function ProgressPage() {
   if (page.error || !page.data)
     return <ErrorNote message={page.error ?? 'Could not load'} onRetry={page.reload} />
 
-  const { exam, subjects, unitProgress, attempts, videosWatched, completionCounts, watchByUnit } =
+  const { exam, subjects, unitProgress, attempts, videosWatched, completionCounts, mastery } =
     page.data
   const units = subjects.flatMap((s) => s.units)
   const completed = units.filter((u) => unitProgress[u.id]?.completed).length
@@ -71,9 +70,7 @@ export default function ProgressPage() {
         />
       </section>
 
-      {exam && (
-        <Achievements subjects={subjects} unitProgress={unitProgress} watchByUnit={watchByUnit} />
-      )}
+      {exam && <Achievements subjects={subjects} mastery={mastery} />}
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Subjects */}
@@ -190,22 +187,17 @@ export default function ProgressPage() {
 // Until the first one, it shows the papers closest to unfolding.
 function Achievements({
   subjects,
-  unitProgress,
-  watchByUnit,
+  mastery,
 }: {
   subjects: SubjectWithUnits[]
-  unitProgress: Record<string, UnitProgress>
-  watchByUnit: Record<string, number[]>
+  mastery: Record<string, UnitMastery>
 }) {
   const papers = subjects.flatMap((subject) =>
     subject.units.map((unit) => ({
       id: unit.id,
       name: unit.name,
       subject: subject.name,
-      mastery: masteryPercent({
-        videoWatch: watchByUnit[unit.id] ?? [],
-        bestQuizPercent: unitProgress[unit.id]?.best_percent ?? null,
-      }),
+      mastery: mastery[unit.id]?.mastery ?? 0,
     })),
   )
   const earned = papers.filter((p) => p.mastery >= ACHIEVED_PERCENT)

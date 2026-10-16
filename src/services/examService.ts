@@ -60,7 +60,9 @@ export async function getUnit(unitId: string): Promise<UnitDetail | null> {
 export async function getMyUnitProgress(): Promise<Record<string, UnitProgress>> {
   const { data, error } = await supabase
     .from('unit_progress')
-    .select('unit_id, completed, best_percent, last_score, last_total, last_percent, last_attempt_at')
+    .select(
+      'unit_id, completed, best_percent, last_score, last_total, last_percent, last_attempt_at',
+    )
   if (error) throw new Error('Could not load your progress.')
 
   const byUnit: Record<string, UnitProgress> = {}

@@ -10,11 +10,17 @@ import VideoPlayer from '../components/VideoPlayer'
 import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
 import { localDay, shortDate } from '../lib/dates'
-import { masteryPercent } from '../lib/mastery'
+import { buildMastery, type MasteryData, type VideoRow } from '../lib/mastery'
 import { PASS_PERCENT } from '../lib/quiz'
 import { liveStreak } from '../lib/streak'
 import { getMyUnitProgress, getSubjectUnits, getUnit } from '../services/examService'
-import { getWeakSpots, listMyAttempts, type AttemptWithUnit } from '../services/quizService'
+import { getMasteryData } from '../services/masteryService'
+import {
+  getWeakSpots,
+  listMyAttempts,
+  type AttemptWithUnit,
+  type WeakSpot,
+} from '../services/quizService'
 import { getMyWatch, getUnitVideos, saveWatch } from '../services/videoService'
 import type { Round, UnitProgress, UnitVideo } from '../types/database'
 
@@ -37,13 +43,14 @@ export default function UnitPage() {
   const { profile } = useShell()
 
   const page = useLoad(async () => {
-    const [unit, progress, attempts] = await Promise.all([
+    const [unit, progress, attempts, masteryData] = await Promise.all([
       getUnit(unitId),
       getMyUnitProgress(),
       listMyAttempts({ unitId }),
+      getMasteryData([unitId]),
     ])
     const siblings = unit ? await getSubjectUnits(unit.subject_id) : []
-    return { unit, progress: progress[unitId], attempts, siblings }
+    return { unit, progress: progress[unitId], attempts, siblings, masteryData }
   }, unitId)
 
   // Videos load on their own: if YouTube is not set up, the rest of the page still works.
@@ -61,14 +68,10 @@ export default function UnitPage() {
     )
   }
 
-  const { unit, progress, attempts, siblings } = page.data
+  const { unit, progress, attempts, siblings, masteryData } = page.data
   const bestByRound = bestPercentByRound(attempts)
-  const bestQuiz = attempts.length ? Math.max(...Object.values(bestByRound)) : null
-  const videoWatch = videos.data ? videos.data.list.map((v) => videos.data!.watch[v.id] ?? 0) : []
-  const avgWatch = videoWatch.length
-    ? videoWatch.reduce((a, b) => a + b, 0) / videoWatch.length
-    : null
-  const mastery = masteryPercent({ videoWatch, bestQuizPercent: bestQuiz })
+  const live = liveMastery(unitId, masteryData, videos.data)
+  const mastery = live.mastery
   const streak = profile
     ? liveStreak(profile.current_streak, profile.last_streak_date, localDay())
     : 0
@@ -77,18 +80,29 @@ export default function UnitPage() {
   const prev = index > 0 ? siblings[index - 1] : null
   const next = index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : null
 
-  const rows = [
-    {
-      name: 'Videos watched',
-      value: avgWatch,
-      empty: videos.loading ? '…' : 'No videos yet',
-    },
-    ...ROUNDS.map(({ round, title }) => ({
-      name: `${title} best`,
-      value: bestByRound[round] ?? null,
-      empty: 'Not tried',
-    })),
-  ]
+  // The frame lists the unit's subtopics, each with its own paper. Units without subtopics
+  // show the videos + rounds breakdown instead.
+  const rows: { name: string; value: number | null; empty: string }[] = live.subtopics.length
+    ? live.subtopics.map((s) => ({ name: s.name, value: s.mastery, empty: '' }))
+    : [
+        {
+          name: 'Videos watched',
+          value: live.videoAvg,
+          empty: videos.loading ? '…' : 'No videos yet',
+        },
+        ...ROUNDS.map(({ round, title }) => ({
+          name: `${title} best`,
+          value: bestByRound[round] ?? null,
+          empty: 'Not tried',
+        })),
+      ]
+  const subtopicName = (spot: { question: string; subtopicId: string | null }) => {
+    const id =
+      spot.subtopicId ??
+      masteryData.questions.find((q) => q.question === spot.question)?.subtopic_id ??
+      null
+    return live.subtopics.find((s) => s.id === id)?.name ?? null
+  }
 
   return (
     <div className="space-y-10">
@@ -128,9 +142,10 @@ export default function UnitPage() {
                 ))}
               </ul>
               <p className="mt-5 text-xs leading-relaxed text-muted">
-                The paper unfolds as you learn: half from videos watched, half from your best quiz
-                score. The unit is marked complete when you score {PASS_PERCENT}% or more in any
-                round.
+                {live.subtopics.length
+                  ? 'Each subtopic has its own paper: half from its videos, half from your best score on its questions. The big paper is their average.'
+                  : 'The paper unfolds as you learn: half from videos watched, half from your best quiz score.'}{' '}
+                The unit is marked complete when you score {PASS_PERCENT}% or more in any round.
               </p>
             </div>
           </section>
@@ -175,7 +190,7 @@ export default function UnitPage() {
           <AskBox unitId={unit.id} unitName={unit.name} />
         </Reveal>
         <Reveal index={7}>
-          <WeakSpots unitId={unit.id} />
+          <WeakSpots unitId={unit.id} subtopicName={subtopicName} />
         </Reveal>
       </div>
 
@@ -201,6 +216,24 @@ export default function UnitPage() {
       )}
     </div>
   )
+}
+
+// Mastery for this unit, using the watch % from this page so the paper reacts while you watch.
+function liveMastery(unitId: string, data: MasteryData, videos: Videos | null) {
+  const videoRows: VideoRow[] = videos
+    ? videos.list.map((v) => ({
+        id: v.id,
+        unit_id: v.unit_id,
+        title: v.title,
+        subtopic_id: data.videos.find((m) => m.id === v.id)?.subtopic_id ?? null,
+      }))
+    : data.videos
+  const result = buildMastery({
+    ...data,
+    videos: videoRows,
+    watch: { ...data.watch, ...(videos?.watch ?? {}) },
+  })
+  return result[unitId] ?? { mastery: 0, videoAvg: null, bestQuiz: null, subtopics: [] }
 }
 
 function bestPercentByRound(attempts: AttemptWithUnit[]): Partial<Record<Round, number>> {
@@ -477,7 +510,13 @@ function AskBox({ unitId, unitName }: { unitId: string; unitName: string }) {
   )
 }
 
-function WeakSpots({ unitId }: { unitId: string }) {
+function WeakSpots({
+  unitId,
+  subtopicName,
+}: {
+  unitId: string
+  subtopicName: (spot: WeakSpot) => string | null
+}) {
   const spots = useLoad(() => getWeakSpots(unitId), unitId)
   return (
     <section className="card h-full p-5">
@@ -495,6 +534,7 @@ function WeakSpots({ unitId }: { unitId: string }) {
         <ul className="mt-4 space-y-3">
           {spots.data.map((spot) => (
             <li key={spot.question} className="border-l-4 border-ember pl-3 text-sm">
+              {subtopicName(spot) && <p className="eyebrow mb-0.5">{subtopicName(spot)}</p>}
               <p>{spot.question}</p>
               <p className="mt-0.5 text-muted">
                 Answer: <span className="text-ink">{spot.answer}</span>
