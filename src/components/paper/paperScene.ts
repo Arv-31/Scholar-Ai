@@ -1,12 +1,12 @@
 // The 3D paper behind <PaperProgress />. Plain three.js, loaded only when a unit page opens.
 //
 // How it works (in plain words):
-// 1. One flat sheet is cut into a grid of points (vertices).
-// 2. The sheet is curled around a small invisible ball: at 0% the ball is tiny, so the sheet
-//    wraps all the way round it (a crushed ball). As progress grows the ball gets bigger and
-//    bigger, so the sheet uncurls, until at 100% it is flat.
-// 3. On top of that, every point is pushed in or out by "ridged" noise: sharp, uneven creases.
-//    The creases are strong at 0% and fade away as the paper flattens.
+// 1. One flat sheet is cut into a fine grid of points (vertices).
+// 2. At 0% the sheet is spread over a whole ball and creased by fold planes cutting through it,
+//    so it is a closed, crushed paper ball that looks real from every side (it slowly turns).
+// 3. As progress grows it opens into a sheet curled around a ball that keeps getting bigger,
+//    so the sheet uncurls, until at 100% it is flat.
+// 4. Straight, narrow fold lines give sharp creases; they fade away as the paper flattens.
 // Drag rotates it in place (like a globe). It never moves, pans or zooms.
 import * as THREE from 'three'
 
@@ -19,9 +19,10 @@ type Options = { progress: number; reducedMotion: boolean }
 
 const SHEET_H = 2
 const SHEET_W = SHEET_H * 1.4
-const SEG_X = 150 // fine enough for crisp fold lines
-const SEG_Y = 106
-const BALL_RADIUS = 0.46 // size of the ball the sheet wraps around at 0%
+const SEG_X = 250 // fine enough for crisp fold lines (each crease is only a few points wide)
+const SEG_Y = 178
+const BALL_RADIUS = 0.46 // size of the ball the sheet curls around as it starts to open
+const CRUSHED_RADIUS = 0.6 // size of the fully crushed ball at 0%
 
 export function createPaperScene(container: HTMLElement, options: Options): PaperHandle {
   const reduced = options.reducedMotion
@@ -43,7 +44,7 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
 
   scene.add(new THREE.HemisphereLight(0xfffaf0, 0x8a8172, 1.7))
   const key = new THREE.DirectionalLight(0xffe6c8, 2.4) // warm key light
-  key.position.set(3, 4, 5)
+  key.position.set(4.5, 2.5, 3) // low, from the side, so every fold casts light and shade
   scene.add(key)
   const fill = new THREE.DirectionalLight(0xc9d6ff, 0.5) // weaker cool fill
   fill.position.set(-4, -1.5, 2)
@@ -96,6 +97,45 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
   for (let i = 0; i < count; i++) peak = Math.max(peak, Math.abs(crease[i] - mean))
   for (let i = 0; i < count; i++) crease[i] = ((crease[i] - mean) / peak) * 0.5
 
+  // The fully crushed ball (0%), worked out once. The sheet is spread evenly over a whole ball
+  // ("octahedral" mapping: no poles, no gap), so it looks closed from every side. It is then
+  // pushed in and out by straight fold planes cutting through it in 3D: sharp creases all round.
+  const ball = new Float32Array(count * 3)
+  const ballCrease = new Float32Array(count)
+  const planes = makeFoldPlanes(90, 23, [0.2, 0.55]) // wide bands: the flat facets
+  const creases = makeFoldPlanes(60, 41, [0.025, 0.06]) // narrow V folds: the crisp crease lines
+  let ballSum = 0
+  for (let i = 0; i < count; i++) {
+    const [dx, dy, dz] = octahedralToSphere(baseX[i] / (SHEET_W / 2), baseY[i] / (SHEET_H / 2))
+    let v = 0
+    // each plane folds a band of the surface into a straight ridge or valley with flat sides;
+    // many overlapping bands make flat facets meeting at sharp edges, like real crushed paper
+    for (const plane of planes) {
+      const d = Math.abs(dx * plane.nx + dy * plane.ny + dz * plane.nz - plane.c)
+      if (d < plane.w) v += plane.a * (1 - d / plane.w)
+    }
+    for (const line of creases) {
+      const d = Math.abs(dx * line.nx + dy * line.ny + dz * line.nz - line.c)
+      if (d < line.w) v += line.a * 0.55 * (1 - d / line.w)
+    }
+    v += (ridged(dx * 5 + 3, dy * 5 + 7, dz * 5 + 1) - 0.5) * 0.12 // fine crinkle
+    ballCrease[i] = v
+    ballSum += v
+    ball[i * 3] = dx
+    ball[i * 3 + 1] = dy
+    ball[i * 3 + 2] = dz
+  }
+  const ballMean = ballSum / count
+  let ballPeak = 0
+  for (let i = 0; i < count; i++) ballPeak = Math.max(ballPeak, Math.abs(ballCrease[i] - ballMean))
+  for (let i = 0; i < count; i++) {
+    ballCrease[i] = ((ballCrease[i] - ballMean) / ballPeak) * 0.5
+    const r = CRUSHED_RADIUS * (1 + 0.36 * ballCrease[i])
+    ball[i * 3] *= r
+    ball[i * 3 + 1] *= r
+    ball[i * 3 + 2] *= r
+  }
+
   // per-point colour: valleys of the creases are a little darker (like real shadowed folds)
   const colors = new Float32Array(count * 3)
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
@@ -109,7 +149,7 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
     roughness: 0.92,
     metalness: 0,
     side: THREE.DoubleSide,
-    flatShading: true, // keeps every crease facet visible
+    flatShading: false, // smooth light across each facet; the folds themselves stay sharp
     bumpMap: fibreTexture(),
     bumpScale: 0.35,
   })
@@ -125,6 +165,7 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
     const depth = 0.5 * Math.pow(1 - p, 1.2) // crease strength
     // keep the ball centred (so it spins in place); slide back to z = 0 as it flattens
     const centre = wrap * smoothstep(0, 0.7, p)
+    const open = smoothstep(0, 0.4, p) // 0 = closed crushed ball, 1 = curling sheet
     for (let i = 0; i < count; i++) {
       const theta = baseX[i] / wrap
       const phi = baseY[i] / wrap
@@ -133,15 +174,20 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
       const ny = Math.sin(phi)
       const nz = Math.cos(theta) * Math.cos(phi)
       const push = crease[i] * depth + wrinkle[i]
-      array[i * 3] = nx * (wrap + push)
-      array[i * 3 + 1] = ny * (wrap + push)
-      array[i * 3 + 2] = nz * (wrap + push) - centre
+      // the curling sheet, blended in from the closed crushed ball during the first ~40%
+      const sx = nx * (wrap + push)
+      const sy = ny * (wrap + push)
+      const sz = nz * (wrap + push) - centre
+      array[i * 3] = ball[i * 3] + (sx - ball[i * 3]) * open
+      array[i * 3 + 1] = ball[i * 3 + 1] + (sy - ball[i * 3 + 1]) * open
+      array[i * 3 + 2] = ball[i * 3 + 2] + (sz - ball[i * 3 + 2]) * open
     }
     // darken the folds while crushed; the shading fades as the sheet flattens
     const colorArray = geometry.attributes.color.array as Float32Array
     const shade = Math.pow(1 - p, 0.8)
     for (let i = 0; i < count; i++) {
-      const valley = Math.max(0, -crease[i]) * 2 // 0 on ridges, up to 1 deep in a fold
+      const fold = ballCrease[i] + (crease[i] - ballCrease[i]) * open
+      const valley = Math.max(0, -fold) * 2 // 0 on ridges, up to 1 deep in a fold
       const c = 1 - shade * (valley * 0.32 + 0.04) + tone[i] * shade
       colorArray[i * 3] = c
       colorArray[i * 3 + 1] = c * 0.995
@@ -246,6 +292,9 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
   const sway = new THREE.Quaternion()
   const hover = new THREE.Quaternion()
   const identity = new THREE.Quaternion()
+  const spin = new THREE.Quaternion()
+  const upAxis = new THREE.Vector3(0, 1, 0)
+  let spinAngle = 0 // slow turn while crushed, so every side of the ball shows
 
   let visible = true
   const viewObserver = new IntersectionObserver(([entry]) => {
@@ -295,7 +344,13 @@ export function createPaperScene(container: HTMLElement, options: Options): Pape
     )
     const tilt = dragging || reduced ? 0 : 0.14
     hover.setFromEuler(new THREE.Euler(hoverY * tilt, hoverX * tilt, 0))
-    holder.quaternion.copy(dragTurn).multiply(hover).multiply(rest).multiply(sway)
+    // slow spin while crushed; as the paper opens it eases back to face you
+    const spinAmount = reduced ? 0 : 1 - smoothstep(0.25, 0.6, shown)
+    if (!dragging) spinAngle += dt * 0.35 * spinAmount
+    const facing = Math.round(spinAngle / (Math.PI * 2)) * Math.PI * 2
+    spinAngle += (facing - spinAngle) * (1 - spinAmount) * (1 - Math.exp(-3 * dt))
+    spin.setFromAxisAngle(upAxis, spinAngle)
+    holder.quaternion.copy(dragTurn).multiply(hover).multiply(rest).multiply(spin).multiply(sway)
 
     renderer.render(scene, camera)
   }
@@ -377,6 +432,42 @@ function ridged(x: number, y: number, z: number) {
     amp *= 0.5
   }
   return sum / 0.9375
+}
+
+// Square sheet coordinates (-1..1, -1..1) to a point on a ball, spread evenly with no poles.
+// The edges of the square fold onto each other at the back, so the ball is fully closed.
+function octahedralToSphere(u: number, v: number): [number, number, number] {
+  let x = u
+  let y = v
+  const z = 1 - Math.abs(u) - Math.abs(v)
+  if (z < 0) {
+    x = (1 - Math.abs(v)) * (u >= 0 ? 1 : -1)
+    y = (1 - Math.abs(u)) * (v >= 0 ? 1 : -1)
+  }
+  const length = Math.hypot(x, y, z) || 1
+  return [x / length, y / length, z / length]
+}
+
+// Random flat planes through the ball: each one makes a sharp crease where it cuts the surface
+function makeFoldPlanes(n: number, seedValue: number, width: [number, number]) {
+  let seed = seedValue
+  const random = () => {
+    seed = (seed * 16807) % 2147483647
+    return seed / 2147483647
+  }
+  return Array.from({ length: n }, () => {
+    const z = random() * 2 - 1
+    const angle = random() * Math.PI * 2
+    const r = Math.sqrt(1 - z * z)
+    return {
+      nx: r * Math.cos(angle),
+      ny: r * Math.sin(angle),
+      nz: z,
+      c: (random() - 0.5) * 1.6,
+      a: (random() < 0.5 ? -1 : 1) * (0.5 + random() * 0.5),
+      w: width[0] + random() * (width[1] - width[0]), // half-width of the folded band
+    }
+  })
 }
 
 // Random straight fold lines (seeded, so every student sees the same paper)

@@ -53,9 +53,9 @@ export default function PaperProgress({ value, label }: Props) {
         {shown}%
       </p>
       {webgl && !failed ? (
-        <div ref={holder} className="h-64 w-full sm:h-80" />
+        <div ref={holder} className="h-72 w-full sm:h-96" />
       ) : (
-        <div className="grid h-64 place-items-center sm:h-80">
+        <div className="grid h-72 place-items-center sm:h-96">
           <PaperIcon value={value} size={180} />
         </div>
       )}
