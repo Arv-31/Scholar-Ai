@@ -119,7 +119,8 @@ function Syllabus({ examId, onChangeExam }: { examId: string; onChangeExam: () =
               </div>
             ) : (
               <p className="max-w-xs text-sm text-white/60">
-                A unit is complete when you score 60% or more in any of its quiz rounds.{' '}
+                A subtopic is complete at 60% in any of its rounds; a unit when all its subtopics
+                are.{' '}
                 <Link to="/settings" className="underline underline-offset-4">
                   Set your exam date
                 </Link>{' '}

@@ -1,7 +1,11 @@
 import type { AnswerRecord } from '../types/database'
 
-// A unit counts as complete at 60% or more on any finished round.
+// A subtopic is complete at 60% or more in any one of its rounds;
+// a unit is complete when all of its subtopics are (worked out by the database views).
 export const PASS_PERCENT = 60
+
+// Every subtopic has this many quiz rounds of 5 questions.
+export const ROUNDS = 10
 
 // One question in the shape the quiz screen uses (predefined and AI questions both fit).
 export type QuizQuestion = {

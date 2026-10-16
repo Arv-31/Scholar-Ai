@@ -9,48 +9,41 @@ import Tally from '../components/Tally'
 import VideoPlayer from '../components/VideoPlayer'
 import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
-import { localDay, shortDate } from '../lib/dates'
+import { localDay } from '../lib/dates'
 import { buildMastery, type MasteryData, type VideoRow } from '../lib/mastery'
-import { PASS_PERCENT } from '../lib/quiz'
+import { PASS_PERCENT, ROUNDS } from '../lib/quiz'
 import { liveStreak } from '../lib/streak'
 import { getMyUnitProgress, getSubjectUnits, getUnit } from '../services/examService'
 import { getMasteryData } from '../services/masteryService'
 import {
+  getMyRoundBests,
+  getRoundSizes,
   getWeakSpots,
-  listMyAttempts,
-  type AttemptWithUnit,
   type WeakSpot,
 } from '../services/quizService'
 import { getMyWatch, getUnitVideos, saveWatch } from '../services/videoService'
-import type { Round, UnitProgress, UnitVideo } from '../types/database'
-
-const ROUNDS: { round: Round; title: string; text: string }[] = [
-  { round: 1, title: 'Round 1', text: '5 set questions on the basics.' },
-  { round: 2, title: 'Round 2', text: '5 set questions, a step harder.' },
-  {
-    round: 3,
-    title: 'Round 3 · AI',
-    text: '5 fresh questions on what you got wrong. Uses your Gemini key.',
-  },
-]
+import type { UnitProgress, UnitVideo } from '../types/database'
 
 type Videos = { list: UnitVideo[]; watch: Record<string, number> }
+// { subtopicId: { round: value } } for question counts and best scores
+type PerRound = Record<string, Record<number, number>>
 
-// One unit (topic). The paper frame is the hero; below it are videos, quiz rounds,
-// Ask AI, weak spots and the next unit. Every block is a bordered "worksheet" card.
+// One unit (topic). The paper frame is the hero; below it are the subtopics (notes + 10 rounds
+// each), videos, Ask AI, weak spots and the next unit. Every block is a bordered "worksheet" card.
 export default function UnitPage() {
   const { unitId = '' } = useParams()
   const { profile } = useShell()
 
   const page = useLoad(async () => {
-    const [unit, progress, attempts, masteryData] = await Promise.all([
+    const [unit, progress, masteryData, sizes, bests] = await Promise.all([
       getUnit(unitId),
       getMyUnitProgress(),
-      listMyAttempts({ unitId }),
       getMasteryData([unitId]),
+      getRoundSizes(unitId),
+      getMyRoundBests(unitId),
     ])
     const siblings = unit ? await getSubjectUnits(unit.subject_id) : []
-    return { unit, progress: progress[unitId], attempts, siblings, masteryData }
+    return { unit, progress: progress[unitId], siblings, masteryData, sizes, bests }
   }, unitId)
 
   // Videos load on their own: if YouTube is not set up, the rest of the page still works.
@@ -68,9 +61,11 @@ export default function UnitPage() {
     )
   }
 
-  const { unit, progress, attempts, siblings, masteryData } = page.data
-  const bestByRound = bestPercentByRound(attempts)
+  const { unit, progress, siblings, masteryData, sizes, bests } = page.data
   const live = liveMastery(unitId, masteryData, videos.data)
+  const passed = (subtopicId: string) =>
+    Object.values(bests[subtopicId] ?? {}).some((p) => p >= PASS_PERCENT)
+  const completeCount = live.subtopics.filter((s) => passed(s.id)).length
   const mastery = live.mastery
   const streak = profile
     ? liveStreak(profile.current_streak, profile.last_streak_date, localDay())
@@ -81,7 +76,7 @@ export default function UnitPage() {
   const next = index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : null
 
   // The frame lists the unit's subtopics, each with its own paper. Units without subtopics
-  // show the videos + rounds breakdown instead.
+  // show the videos + best quiz breakdown instead.
   const rows: { name: string; value: number | null; empty: string }[] = live.subtopics.length
     ? live.subtopics.map((s) => ({ name: s.name, value: s.mastery, empty: '' }))
     : [
@@ -90,11 +85,7 @@ export default function UnitPage() {
           value: live.videoAvg,
           empty: videos.loading ? '…' : 'No videos yet',
         },
-        ...ROUNDS.map(({ round, title }) => ({
-          name: `${title} best`,
-          value: bestByRound[round] ?? null,
-          empty: 'Not tried',
-        })),
+        { name: 'Best quiz', value: live.bestQuiz, empty: 'Not tried' },
       ]
   const subtopicName = (spot: { question: string; subtopicId: string | null }) => {
     const id =
@@ -145,7 +136,8 @@ export default function UnitPage() {
                 {live.subtopics.length
                   ? 'Each subtopic has its own paper: half from its videos, half from your best score on its questions. The big paper is their average.'
                   : 'The paper unfolds as you learn: half from videos watched, half from your best quiz score.'}{' '}
-                The unit is marked complete when you score {PASS_PERCENT}% or more in any round.
+                A subtopic is complete when you score {PASS_PERCENT}% or more in any of its{' '}
+                {ROUNDS} rounds; the unit is complete when every subtopic is.
               </p>
             </div>
           </section>
@@ -153,10 +145,19 @@ export default function UnitPage() {
 
         <aside className="grid content-start gap-4 sm:grid-cols-3 lg:grid-cols-1">
           <Reveal index={1}>
-            <StatusCard progress={progress} />
+            <StatusCard
+              progress={progress}
+              complete={completeCount}
+              total={live.subtopics.length}
+            />
           </Reveal>
           <Reveal index={2}>
-            <NextUpCard unitId={unit.id} bestByRound={bestByRound} videos={videos.data} />
+            <NextUpCard
+              subtopics={live.subtopics}
+              sizes={sizes}
+              bests={bests}
+              videos={videos.data}
+            />
           </Reveal>
           <Reveal index={3}>
             <section className="panel p-5">
@@ -172,7 +173,7 @@ export default function UnitPage() {
 
       {live.subtopics.length > 0 && (
         <Reveal index={4}>
-          <SubtopicsBlock subtopics={live.subtopics} />
+          <SubtopicsBlock subtopics={live.subtopics} sizes={sizes} bests={bests} />
         </Reveal>
       )}
 
@@ -185,10 +186,6 @@ export default function UnitPage() {
             videos.setData({ ...videos.data, watch: { ...videos.data.watch, [videoId]: percent } })
           }}
         />
-      </Reveal>
-
-      <Reveal index={5}>
-        <QuizRounds unitId={unit.id} attempts={attempts} />
       </Reveal>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -242,12 +239,6 @@ function liveMastery(unitId: string, data: MasteryData, videos: Videos | null) {
   return result[unitId] ?? { mastery: 0, videoAvg: null, bestQuiz: null, subtopics: [] }
 }
 
-function bestPercentByRound(attempts: AttemptWithUnit[]): Partial<Record<Round, number>> {
-  const best: Partial<Record<Round, number>> = {}
-  for (const a of attempts) best[a.round] = Math.max(best[a.round] ?? 0, a.percent)
-  return best
-}
-
 function BackLink() {
   return (
     <Link to="/exam" className="transition hover:text-ink">
@@ -256,9 +247,18 @@ function BackLink() {
   )
 }
 
-function StatusCard({ progress }: { progress?: UnitProgress }) {
-  const status = progress?.completed ? 'Complete' : progress ? 'In progress' : 'Not started'
-  const dot = progress?.completed ? 'bg-green' : progress ? 'bg-ember' : 'bg-line'
+function StatusCard({
+  progress,
+  complete,
+  total,
+}: {
+  progress?: UnitProgress
+  complete: number
+  total: number
+}) {
+  const done = total > 0 && complete === total
+  const status = done ? 'Complete' : progress || complete > 0 ? 'In progress' : 'Not started'
+  const dot = done ? 'bg-green' : progress || complete > 0 ? 'bg-ember' : 'bg-line'
   return (
     <section className="card p-5">
       <p className="eyebrow">Status</p>
@@ -267,39 +267,43 @@ function StatusCard({ progress }: { progress?: UnitProgress }) {
         {status}
       </p>
       <p className="nums mt-2 text-sm text-muted">
-        {progress
-          ? `Last ${progress.last_score}/${progress.last_total} · best ${Math.round(progress.best_percent)}%`
+        {total > 0
+          ? `${complete} of ${total} subtopics complete`
           : `Pass mark ${PASS_PERCENT}%`}
       </p>
     </section>
   )
 }
 
-// One clear suggestion for what to do next on this unit.
+// One clear suggestion for what to do next on this unit: the first subtopic not yet complete,
+// at its first round not yet tried (or its best round to retry), after any unwatched video.
 function NextUpCard({
-  unitId,
-  bestByRound,
+  subtopics,
+  sizes,
+  bests,
   videos,
 }: {
-  unitId: string
-  bestByRound: Partial<Record<Round, number>>
+  subtopics: { id: string; name: string }[]
+  sizes: PerRound
+  bests: PerRound
   videos: Videos | null
 }) {
   const unwatched = videos?.list.find((v) => (videos.watch[v.id] ?? 0) < 80)
-  let text = 'Try a fresh AI round'
-  let to = `/exam/unit/${unitId}/quiz/3`
-  if (!(1 in bestByRound)) {
-    text = 'Start Round 1'
-    to = `/exam/unit/${unitId}/quiz/1`
-  } else if (unwatched) {
-    text = `Watch: ${unwatched.title}`
-    to = '#videos'
-  } else if (!(2 in bestByRound)) {
-    text = 'Start Round 2'
-    to = `/exam/unit/${unitId}/quiz/2`
-  } else if (Math.max(...Object.values(bestByRound)) < PASS_PERCENT) {
-    text = 'Retry a round to pass'
-    to = `/exam/unit/${unitId}/quiz/2`
+  const open = subtopics.find(
+    (s) => !Object.values(bests[s.id] ?? {}).some((p) => p >= PASS_PERCENT),
+  )
+  let text = 'Everything is complete. Revise from your Mistakes page.'
+  let to = '/exam/mistakes'
+  if (open) {
+    const rounds = Object.keys(sizes[open.id] ?? {}).map(Number)
+    const fresh = rounds.sort((a, b) => a - b).find((r) => !(r in (bests[open.id] ?? {})))
+    const round = fresh ?? rounds[0] ?? 1
+    text = `${open.name} · ${fresh ? 'Start' : 'Retry'} round ${round}`
+    to = `/exam/subtopic/${open.id}/round/${round}`
+    if (unwatched && !bests[open.id]) {
+      text = `Watch: ${unwatched.title}`
+      to = '#videos'
+    }
   }
 
   return (
@@ -399,7 +403,7 @@ function VideosBlock({
               {/* watch-then-check: once 80% is watched, offer a 3-question practice check */}
               {(data.watch[current.id] ?? 0) >= 80 && (
                 <Link
-                  to={`/exam/unit/${current.unit_id}/quiz/1?quick=1`}
+                  to={`/exam/unit/${current.unit_id}/check`}
                   className="btn-primary mt-3 py-2! text-sm"
                 >
                   Quick check · 3 questions
@@ -448,45 +452,6 @@ function VideosBlock({
           </ul>
         </div>
       )}
-    </section>
-  )
-}
-
-function QuizRounds({ unitId, attempts }: { unitId: string; attempts: AttemptWithUnit[] }) {
-  return (
-    <section>
-      <h2 className="mb-3 text-xl font-semibold">Quiz rounds</h2>
-      <div className="grid gap-4 md:grid-cols-3">
-        {ROUNDS.map(({ round, title, text }) => {
-          const last = attempts.find((a) => a.round === round)
-          const passed = last ? last.percent >= PASS_PERCENT : false
-          return (
-            <article key={round} className="card flex flex-col gap-3 p-5">
-              <div className="flex items-center justify-between">
-                <h3 className="font-sans text-base font-semibold">{title}</h3>
-                {last && (
-                  <span
-                    className={`nums border border-ink px-2 py-0.5 text-xs font-semibold ${
-                      passed ? 'bg-green text-on-accent' : 'bg-ember-soft text-ink'
-                    }`}
-                  >
-                    {Math.round(last.percent)}%
-                  </span>
-                )}
-              </div>
-              <p className="flex-1 text-sm text-muted">{text}</p>
-              <p className="nums text-xs text-muted">
-                {last
-                  ? `Last: ${last.score}/${last.total} on ${shortDate(last.created_at)}`
-                  : 'Not tried yet'}
-              </p>
-              <Link to={`/exam/unit/${unitId}/quiz/${round}`} className="btn-primary py-2! text-sm">
-                {last ? 'Try again' : 'Start'}
-              </Link>
-            </article>
-          )
-        })}
-      </div>
     </section>
   )
 }
@@ -541,8 +506,7 @@ function WeakSpots({
       {spots.error && <p className="mt-4 text-sm text-danger">{spots.error}</p>}
       {spots.data && spots.data.length === 0 && (
         <p className="mt-4 text-sm text-muted">
-          Nothing yet. Questions you miss in Rounds 1 and 2 show up here, and Round 3 practises
-          them.
+          Nothing yet. Questions you miss in any round show up here and on your Mistakes page.
         </p>
       )}
       {spots.data && spots.data.length > 0 && (
@@ -562,29 +526,88 @@ function WeakSpots({
   )
 }
 
-// Learn first: every subtopic has written notes (3 short paragraphs, key points, formulas).
+// Each subtopic: notes first, then 10 rounds of 5 questions. A round shows its best score;
+// passing any one round (60%+) completes the subtopic.
 function SubtopicsBlock({
   subtopics,
+  sizes,
+  bests,
 }: {
   subtopics: { id: string; name: string; mastery: number }[]
+  sizes: PerRound
+  bests: PerRound
 }) {
   return (
     <section>
-      <div className="mb-4 flex items-baseline justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="text-2xl font-semibold">Subtopics</h2>
-        <span className="eyebrow">Learn · then watch · then practise</span>
+        <span className="eyebrow">Read the notes · then practise the rounds</span>
       </div>
-      <ul className="card divide-y divide-line overflow-hidden">
-        {subtopics.map((s, i) => (
-          <li key={s.id}>
-            <Link to={`/exam/notes/${s.id}`} className="row-link group gap-4 px-5 py-4">
-              <span className="nums w-6 text-sm text-muted">{String(i + 1).padStart(2, '0')}</span>
-              <PaperIcon value={s.mastery} size={22} />
-              <span className="min-w-0 flex-1 font-medium">{s.name}</span>
-              <span className="nums text-sm text-muted group-hover:text-ink">Read notes →</span>
-            </Link>
-          </li>
-        ))}
+      <ul className="space-y-4">
+        {subtopics.map((s, i) => {
+          const best = bests[s.id] ?? {}
+          const top = Math.max(-1, ...Object.values(best))
+          const done = top >= PASS_PERCENT
+          return (
+            <li key={s.id} className="card p-5">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="nums w-6 text-sm text-muted">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <PaperIcon value={s.mastery} size={22} />
+                <h3 className="min-w-0 flex-1 font-sans text-base font-semibold">{s.name}</h3>
+                <span
+                  className={`nums border border-ink px-2 py-0.5 text-xs font-semibold ${
+                    done ? 'bg-green text-on-accent' : top >= 0 ? 'bg-ember-soft' : 'bg-surface'
+                  }`}
+                >
+                  {done ? '✓ Complete' : top >= 0 ? `Best ${Math.round(top)}%` : 'Not started'}
+                </span>
+                <Link to={`/exam/notes/${s.id}`} className="btn-ghost py-1.5! text-xs!">
+                  Notes
+                </Link>
+              </div>
+              <ol className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-10" aria-label="Rounds">
+                {Array.from({ length: ROUNDS }, (_, r) => r + 1).map((round) => {
+                  const ready = (sizes[s.id]?.[round] ?? 0) > 0
+                  const score = best[round]
+                  const label =
+                    score === undefined ? `Round ${round}` : `Round ${round}, best ${score}%`
+                  const look =
+                    score === undefined
+                      ? 'border-line'
+                      : score >= PASS_PERCENT
+                        ? 'border-ink bg-green text-on-accent'
+                        : 'border-ink bg-ember-soft'
+                  return (
+                    <li key={round}>
+                      {ready ? (
+                        <Link
+                          to={`/exam/subtopic/${s.id}/round/${round}`}
+                          aria-label={label}
+                          title={label}
+                          className={`nums flex h-12 flex-col items-center justify-center border text-xs transition hover:-translate-y-0.5 hover:border-ink ${look}`}
+                        >
+                          <span className="font-semibold">{round}</span>
+                          {score !== undefined && (
+                            <span className="text-[10px]">{Math.round(score)}%</span>
+                          )}
+                        </Link>
+                      ) : (
+                        <span
+                          title="Coming soon"
+                          className="nums flex h-12 items-center justify-center border border-dashed border-line text-xs text-muted"
+                        >
+                          {round}
+                        </span>
+                      )}
+                    </li>
+                  )
+                })}
+              </ol>
+            </li>
+          )
+        })}
       </ul>
     </section>
   )

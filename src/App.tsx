@@ -25,7 +25,8 @@ const TITLES: [RegExp, string][] = [
   [/^\/login/, 'Sign in'],
   [/^\/reset-password/, 'Reset password'],
   [/^\/default/, 'Today'],
-  [/^\/exam\/unit\/[^/]+\/quiz/, 'Quiz'],
+  [/^\/exam\/subtopic\/[^/]+\/round/, 'Quiz'],
+  [/^\/exam\/unit\/[^/]+\/check/, 'Quick check'],
   [/^\/exam\/unit/, 'Unit'],
   [/^\/exam\/chat/, 'Ask AI'],
   [/^\/exam\/mistakes/, 'Mistakes'],
@@ -66,7 +67,8 @@ export default function App() {
               {/* Exam mode */}
               <Route path="/exam" element={<ExamHome />} />
               <Route path="/exam/unit/:unitId" element={<UnitPage />} />
-              <Route path="/exam/unit/:unitId/quiz/:round" element={<QuizPage />} />
+              <Route path="/exam/unit/:unitId/check" element={<QuizPage />} />
+              <Route path="/exam/subtopic/:subtopicId/round/:round" element={<QuizPage />} />
               <Route path="/exam/chat" element={<ChatPage />} />
               <Route path="/exam/mistakes" element={<MistakesPage />} />
               <Route path="/exam/mock" element={<MockTestPage />} />

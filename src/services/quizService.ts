@@ -1,34 +1,63 @@
-import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
 import { scoreQuiz, toAnswerRecords, type QuizQuestion } from '../lib/quiz'
 import type { AnswerRecord, QuizAttempt, Round, Subtopic } from '../types/database'
-import { callFunction } from './functionsClient'
 
-// Rounds 1 and 2: the 5 saved questions for this unit.
-export async function getRoundQuestions(unitId: string, round: 1 | 2): Promise<QuizQuestion[]> {
-  const load = (columns: string) =>
-    supabase
-      .from('questions')
-      .select(columns)
-      .eq('unit_id', unitId)
-      .eq('round', round)
-      .order('sort_order')
-  let result = await load('question, options, correct_index, subtopic_id')
-  if (result.error) result = await load('question, options, correct_index') // before the subtopics migration
-  if (result.error) throw new Error('Could not load the questions.')
+type QuestionRow = {
+  question: string
+  options: string[]
+  correct_index: number
+  subtopic_id: string | null
+}
 
-  type Row = {
-    question: string
-    options: string[]
-    correct_index: number
-    subtopic_id?: string | null
+const toQuizQuestion = (q: QuestionRow): QuizQuestion => ({
+  question: q.question,
+  options: q.options,
+  correctIndex: q.correct_index,
+  subtopicId: q.subtopic_id,
+})
+
+// The 5 questions of one round of one subtopic (rounds 1 to ROUNDS).
+export async function getSubtopicRound(subtopicId: string, round: Round): Promise<QuizQuestion[]> {
+  const { data, error } = await supabase
+    .from('questions')
+    .select('question, options, correct_index, subtopic_id')
+    .eq('subtopic_id', subtopicId)
+    .eq('round', round)
+    .order('sort_order')
+  if (error) throw new Error('Could not load the questions.')
+  return (data as QuestionRow[]).map(toQuizQuestion)
+}
+
+// How many questions each round of each subtopic of a unit has: { subtopicId: { round: count } }.
+export async function getRoundSizes(unitId: string): Promise<Record<string, Record<number, number>>> {
+  const { data, error } = await supabase
+    .from('questions')
+    .select('subtopic_id, round')
+    .eq('unit_id', unitId)
+  if (error) return {}
+  const sizes: Record<string, Record<number, number>> = {}
+  for (const row of data as { subtopic_id: string | null; round: number }[]) {
+    if (!row.subtopic_id) continue
+    const rounds = (sizes[row.subtopic_id] ??= {})
+    rounds[row.round] = (rounds[row.round] ?? 0) + 1
   }
-  return (result.data as unknown as Row[]).map((q) => ({
-    question: q.question,
-    options: q.options,
-    correctIndex: q.correct_index,
-    subtopicId: q.subtopic_id ?? null,
-  }))
+  return sizes
+}
+
+// The student's best score in each round of each subtopic of a unit: { subtopicId: { round: % } }.
+export async function getMyRoundBests(unitId: string): Promise<Record<string, Record<number, number>>> {
+  const { data, error } = await supabase
+    .from('quiz_attempts')
+    .select('subtopic_id, round, percent')
+    .eq('unit_id', unitId)
+    .not('subtopic_id', 'is', null)
+  if (error) return {} // before the subtopic-rounds update
+  const bests: Record<string, Record<number, number>> = {}
+  for (const row of data as { subtopic_id: string; round: number; percent: number }[]) {
+    const rounds = (bests[row.subtopic_id] ??= {})
+    rounds[row.round] = Math.max(rounds[row.round] ?? 0, Number(row.percent))
+  }
+  return bests
 }
 
 // The subtopics of a unit, in order. Empty if there are none (or before the migration).
@@ -41,41 +70,17 @@ export async function getSubtopics(unitId: string): Promise<Subtopic[]> {
   return error ? [] : (data as Subtopic[])
 }
 
-const Round3Response = z.object({
-  questions: z
-    .array(
-      z.object({
-        question: z.string(),
-        options: z.array(z.string()).length(4),
-        correctIndex: z.number().int().min(0).max(3),
-        explanation: z.string().optional(),
-        subtopicId: z.string().nullable().optional(),
-      }),
-    )
-    .min(1),
-})
-
-// Round 3: 5 fresh questions from Gemini (student's own key), aimed at their weak spots.
-export async function generateRound3(unitId: string): Promise<QuizQuestion[]> {
-  const result = await callFunction('ai', { task: 'quiz', unitId }, Round3Response)
-  return result.questions
-}
-
-export async function getQuestions(unitId: string, round: Round): Promise<QuizQuestion[]> {
-  return round === 3 ? generateRound3(unitId) : getRoundQuestions(unitId, round)
-}
-
-// Saves a finished round. The database works out the percent and unit completion.
+// Saves a finished round of a subtopic. The database works out the percent and completion.
 export async function saveAttempt(
-  unitId: string,
-  round: Round,
+  target: { unitId: string; subtopicId: string; round: Round },
   questions: QuizQuestion[],
   chosen: number[],
 ): Promise<void> {
   const { score, total } = scoreQuiz(questions, chosen)
   const { error } = await supabase.from('quiz_attempts').insert({
-    unit_id: unitId,
-    round,
+    unit_id: target.unitId,
+    subtopic_id: target.subtopicId,
+    round: target.round,
     score,
     total,
     answers: toAnswerRecords(questions, chosen),
@@ -108,13 +113,12 @@ export async function listMyAttempts(options: { unitId?: string; limit?: number 
 
 export type WeakSpot = { question: string; answer: string; subtopicId: string | null }
 
-// Questions the student got wrong in their latest rounds 1-2 attempts for a unit (newest first).
+// Questions the student got wrong in their latest attempts for a unit (newest first).
 export async function getWeakSpots(unitId: string, limit = 5): Promise<WeakSpot[]> {
   const { data, error } = await supabase
     .from('quiz_attempts')
     .select('answers')
     .eq('unit_id', unitId)
-    .in('round', [1, 2])
     .order('created_at', { ascending: false })
     .limit(6)
   if (error) throw new Error('Could not load your weak spots.')
@@ -135,12 +139,16 @@ export async function getWeakSpots(unitId: string, limit = 5): Promise<WeakSpot[
   return spots.slice(0, limit)
 }
 
-// Watch-then-check: 3 questions picked at random from the unit's rounds 1 and 2.
+// Watch-then-check: 3 questions picked at random from all of the unit's questions.
 export async function getQuickCheck(unitId: string): Promise<QuizQuestion[]> {
-  const [one, two] = await Promise.all([getRoundQuestions(unitId, 1), getRoundQuestions(unitId, 2)])
-  return [...one, ...two]
+  const { data, error } = await supabase
+    .from('questions')
+    .select('question, options, correct_index, subtopic_id')
+    .eq('unit_id', unitId)
+  if (error) throw new Error('Could not load the questions.')
+  return (data as QuestionRow[])
     .map((q) => ({ q, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .slice(0, 3)
-    .map(({ q }) => q)
+    .map(({ q }) => toQuizQuestion(q))
 }

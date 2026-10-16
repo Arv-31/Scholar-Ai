@@ -1,0 +1,147 @@
+# NIMCET | Mathematics | Algebra
+
+## Sets & Logarithms
+If A = {1, 2, 3, 4} and B = {3, 4, 5}, then A ∪ B is: ;; {3, 4} ;; *{1, 2, 3, 4, 5} ;; {1, 2, 5} ;; {1, 2, 3, 4}
+If A = {2, 4, 6, 8} and B = {6, 8, 10}, then A − B is: ;; *{2, 4} ;; {10} ;; {6, 8} ;; {2, 4, 10}
+The number of subsets of a set with 4 elements is: ;; 8 ;; 4 ;; *16 ;; 12
+log₂ 32 equals: ;; 4 ;; *5 ;; 6 ;; 16
+log₁₀ 1000 equals: ;; *3 ;; 2 ;; 10 ;; 100
+Which of these is the empty set? ;; {0} ;; *{x : x is a natural number less than 1} ;; {∅} ;; {x : x² = 1}
+If n(A) = 10, n(B) = 15 and n(A ∩ B) = 5, then n(A ∪ B) is: ;; 25 ;; 30 ;; *20 ;; 15
+log₃ 81 equals: ;; 3 ;; 27 ;; *4 ;; 9
+The value of log₅ 1 is: ;; 1 ;; 5 ;; *0 ;; undefined
+A ∩ A′ (a set intersected with its complement) is: ;; A ;; U ;; A′ ;; *∅
+log 2 + log 5 (base 10) equals: ;; log 7 ;; *1 ;; 10 ;; log 3
+The number of proper subsets of {a, b, c} is: ;; 8 ;; *7 ;; 6 ;; 3
+log₂ (1/8) equals: ;; 3 ;; −1/3 ;; 1/3 ;; *−3
+If U = {1, 2, …, 10} and A = {2, 4, 6, 8, 10}, then n(A′) is: ;; 4 ;; *5 ;; 6 ;; 10
+log₄ 64 equals: ;; 4 ;; 16 ;; *3 ;; 2
+In a class of 40, 25 like tea, 20 like coffee and 10 like both. How many like neither? ;; 0 ;; 10 ;; *5 ;; 15
+log₁₀ 0.01 equals: ;; 2 ;; *−2 ;; −1 ;; 0.2
+Which of these sets is infinite? ;; {letters of the English alphabet} ;; {days of the week} ;; *{multiples of 3} ;; {factors of 24}
+If logₓ 49 = 2, then x is: ;; 2 ;; *7 ;; 49 ;; 24.5
+A − (A ∩ B) is the same as: ;; B − A ;; A ∩ B ;; *A − B ;; A ∪ B
+log 8 ÷ log 2 equals: ;; 4 ;; log 4 ;; *3 ;; 6
+The power set of {1, 2} has how many elements? ;; 2 ;; 3 ;; *4 ;; 8
+2 log 3 + log 4 (base 10) equals: ;; log 10 ;; log 24 ;; *log 36 ;; log 7
+If A ⊂ B, then A ∩ B equals: ;; B ;; *A ;; ∅ ;; A ∪ B
+log₂ 3 × log₃ 8 equals: ;; 2 ;; *3 ;; 8 ;; 24
+If n(A) = 7, n(B) = 9 and n(A ∪ B) = 12, then n(A ∩ B) is: ;; 3 ;; *4 ;; 5 ;; 2
+If log₁₀ x = −1, then x is: ;; −10 ;; 10 ;; *0.1 ;; −0.1
+By De Morgan’s law, (A ∪ B)′ equals: ;; A′ ∪ B′ ;; *A′ ∩ B′ ;; A ∩ B ;; A′ ∪ B
+log₉ 3 equals: ;; 3 ;; 2 ;; *1/2 ;; 1/3
+The set {x : x is an even prime number} has how many elements? ;; 0 ;; *1 ;; 2 ;; infinitely many
+If log 2 = 0.3010, then log 8 is: ;; 0.6020 ;; *0.9030 ;; 0.0903 ;; 2.4080
+If log 2 = 0.3010, then log 5 is: ;; 0.5000 ;; *0.6990 ;; 0.3010 ;; 1.3010
+The symmetric difference of A = {1, 2, 3} and B = {2, 3, 4} is: ;; {2, 3} ;; *{1, 4} ;; {1, 2, 3, 4} ;; ∅
+The solution of log₂ (x + 1) = 3 is: ;; 8 ;; *7 ;; 9 ;; 2
+Of 100 students, 60 passed Maths, 50 passed English and 30 passed both. How many passed at least one? ;; 110 ;; *80 ;; 70 ;; 90
+logₐ (a³) equals: ;; a³ ;; *3 ;; 3a ;; 1/3
+If n(A) = 3 and n(B) = 4, the number of elements in A × B is: ;; 7 ;; *12 ;; 81 ;; 64
+log (a²b) written using log a and log b is: ;; 2 log a · log b ;; *2 log a + log b ;; log a + 2 log b ;; (log a)² + log b
+If 2ˣ = 10, then x equals: ;; log 2 ;; 5 ;; *1 / log 2 ;; log 5
+A set has 64 subsets. How many elements does it have? ;; 8 ;; *6 ;; 32 ;; 5
+log (x − 3) is defined only when: ;; x ≥ 3 ;; *x > 3 ;; x < 3 ;; x ≠ 3
+In a survey, 70% read paper A, 50% read paper B and 30% read both. What percent read neither? ;; 0% ;; *10% ;; 20% ;; 30%
+log₂ (log₂ 16) equals: ;; 4 ;; *2 ;; 1 ;; 16
+The value of log₁₀ 25 + log₁₀ 4 is: ;; log 29 ;; 100 ;; *2 ;; 1
+If A = {x : x² = 4} and B = {−2, 2}, then: ;; A ⊂ B but A ≠ B ;; *A = B ;; A ∩ B = ∅ ;; B ⊂ A but A ≠ B
+The solution of log x + log (x − 3) = 1 (base 10) is: ;; x = 2 ;; *x = 5 ;; x = −2 ;; x = 5 or x = −2
+n(A) = 20, n(B) = 25, n(C) = 30; each pair has 10 in common and all three share 5. n(A ∪ B ∪ C) is: ;; 75 ;; *50 ;; 45 ;; 60
+
+## Quadratics & Complex Numbers
+The roots of x² − 7x + 12 = 0 are: ;; 2 and 6 ;; *3 and 4 ;; −3 and −4 ;; 1 and 12
+The sum of the roots of 2x² − 8x + 3 = 0 is: ;; −4 ;; *4 ;; 3/2 ;; −3/2
+The product of the roots of 3x² + 5x − 6 = 0 is: ;; 2 ;; *−2 ;; −5/3 ;; 5/3
+The value of i² is: ;; 1 ;; *−1 ;; i ;; −i
+The value of i³ is: ;; i ;; 1 ;; *−i ;; −1
+The discriminant of x² + 4x + 4 = 0 is: ;; 4 ;; 8 ;; *0 ;; 16
+|3 + 4i| equals: ;; 7 ;; *5 ;; 25 ;; 1
+The conjugate of 2 − 5i is: ;; −2 + 5i ;; −2 − 5i ;; *2 + 5i ;; 5 − 2i
+The roots of x² + 9 = 0 are: ;; ±3 ;; *±3i ;; 3 and −9 ;; there are no roots
+The quadratic equation with roots 2 and 5 is: ;; x² + 7x + 10 = 0 ;; *x² − 7x + 10 = 0 ;; x² − 10x + 7 = 0 ;; x² − 3x + 10 = 0
+(2 + 3i) + (4 − i) equals: ;; 6 + 4i ;; *6 + 2i ;; 2 + 2i ;; 8 − 3i
+If the discriminant of a real quadratic is negative, its roots are: ;; real and equal ;; real and different ;; *complex conjugates ;; one real and one complex
+i⁴ equals: ;; −1 ;; i ;; *1 ;; −i
+(1 + i)(1 − i) equals: ;; 0 ;; 1 ;; *2 ;; 2i
+The roots of x² − 2x − 15 = 0 are: ;; 3 and 5 ;; *5 and −3 ;; −5 and 3 ;; 15 and −1
+If α and β are the roots of x² − 5x + 6 = 0, then α² + β² is: ;; 25 ;; *13 ;; 12 ;; 1
+For x² + kx + 9 = 0 to have equal roots, k must be: ;; ±3 ;; *±6 ;; ±9 ;; ±18
+i¹⁰ equals: ;; 1 ;; i ;; *−1 ;; −i
+(3 + 2i)(1 + i) equals: ;; 3 + 2i ;; *1 + 5i ;; 5 + i ;; 3 + 5i
+The modulus of −5 + 12i is: ;; 7 ;; 17 ;; *13 ;; 12
+If α and β are the roots of x² + 3x − 4 = 0, then 1/α + 1/β is: ;; −3/4 ;; *3/4 ;; 4/3 ;; −4/3
+Which equation has real and distinct roots? ;; x² + x + 1 = 0 ;; x² + 2x + 1 = 0 ;; *x² − 5x + 4 = 0 ;; x² + 4 = 0
+1/i equals: ;; i ;; *−i ;; 1 ;; −1
+i + i² + i³ + i⁴ equals: ;; 1 ;; i ;; *0 ;; −1
+The roots of 2x² − 3x − 2 = 0 are: ;; 2 and 1/2 ;; *2 and −1/2 ;; −2 and 1/2 ;; 1 and −2
+If one root of x² − 6x + k = 0 is 2, then k is: ;; 4 ;; *8 ;; 6 ;; 12
+The real part of (2 + i)² is: ;; 4 ;; *3 ;; 5 ;; 2
+If z = 1 + i, then z² is: ;; 2 ;; 0 ;; *2i ;; 1 + 2i
+The quadratic whose roots are the reciprocals of the roots of 2x² − 5x + 3 = 0 is: ;; 2x² + 5x + 3 = 0 ;; *3x² − 5x + 2 = 0 ;; 3x² + 5x − 2 = 0 ;; 5x² − 2x + 3 = 0
+(4 + 3i) ÷ (3 − 4i) simplifies to: ;; 1 ;; −i ;; *i ;; −1
+The maximum value of −x² + 4x + 1 is: ;; 1 ;; 4 ;; *5 ;; 3
+The minimum value of x² − 6x + 10 is: ;; 10 ;; *1 ;; 3 ;; −1
+If α + β = 4 and αβ = 1, then α² + β² equals: ;; 16 ;; *14 ;; 15 ;; 18
+The argument of the complex number i is: ;; 0 ;; π ;; *π/2 ;; π/4
+The value of (1 + i)⁴ is: ;; 4 ;; *−4 ;; 4i ;; −4i
+For which k does x² − 4x + k = 0 have no real roots? ;; k < 4 ;; k = 4 ;; *k > 4 ;; k ≤ 4
+If α and β are the roots of x² − 3x + 1 = 0, then α³ + β³ is: ;; 27 ;; *18 ;; 24 ;; 9
+√(−16) × √(−9) equals: ;; 12 ;; *−12 ;; 12i ;; −12i
+The roots of x² + x + 1 = 0 are: ;; real and equal ;; real and distinct ;; *non-real complex numbers ;; rational
+If ω is a complex cube root of unity, 1 + ω + ω² equals: ;; 1 ;; 3 ;; *0 ;; −1
+If ω is a complex cube root of unity, ω³ equals: ;; ω ;; 0 ;; *1 ;; −1
+If the roots of x² + px + q = 0 are 3 and −5, then: ;; p = −2, q = 15 ;; *p = 2, q = −15 ;; p = 2, q = 15 ;; p = −2, q = −15
+If |z₁| = 3 and |z₂| = 4, then |z₁z₂| is: ;; 7 ;; 1 ;; *12 ;; 5
+The equation whose roots are double the roots of x² − 3x + 2 = 0 is: ;; x² − 3x + 4 = 0 ;; *x² − 6x + 8 = 0 ;; x² − 6x + 4 = 0 ;; 2x² − 3x + 2 = 0
+The points z with |z − 2| = 3 in the complex plane lie on: ;; a straight line ;; *a circle with centre 2 and radius 3 ;; a circle with centre 0 and radius 3 ;; a parabola
+The difference between the roots of x² − 10x + 21 = 0 is: ;; 2 ;; *4 ;; 6 ;; 10
+The number of real solutions of x² − 5|x| + 6 = 0 is: ;; 2 ;; 3 ;; *4 ;; 0
+
+## Sequences, Series & Combinations
+The 10th term of the AP 3, 7, 11, … is: ;; 43 ;; *39 ;; 40 ;; 35
+The sum of the first 20 natural numbers is: ;; 200 ;; *210 ;; 190 ;; 420
+The common ratio of the GP 2, 6, 18, 54 is: ;; 2 ;; 4 ;; *3 ;; 6
+5! equals: ;; 25 ;; 60 ;; *120 ;; 720
+⁶C₂ equals: ;; 30 ;; 12 ;; *15 ;; 20
+⁵P₂ equals: ;; 10 ;; *20 ;; 25 ;; 60
+The 6th term of the GP 1, 2, 4, 8, … is: ;; 16 ;; *32 ;; 64 ;; 12
+The sum 2 + 4 + 6 + … + 20 is: ;; 100 ;; *110 ;; 120 ;; 200
+The number of ways to arrange the letters of the word CAT is: ;; 3 ;; *6 ;; 9 ;; 27
+The sum of the infinite GP 1 + 1/3 + 1/9 + … is: ;; 2 ;; *3/2 ;; 3 ;; 4/3
+¹⁰C₁₀ equals: ;; 0 ;; 10 ;; *1 ;; 100
+How many 3-digit numbers can be formed from 1, 2, 3, 4 without repeating a digit? ;; 12 ;; *24 ;; 64 ;; 4
+Which term of the AP 5, 8, 11, … is 50? ;; 14th ;; *16th ;; 15th ;; 17th
+The arithmetic mean of 4 and 16 is: ;; 8 ;; *10 ;; 12 ;; 20
+The geometric mean of 4 and 16 is: ;; 10 ;; *8 ;; 12 ;; 6
+In how many ways can a committee of 3 be chosen from 7 people? ;; 210 ;; 21 ;; *35 ;; 42
+The number of arrangements of the letters of BOOK is: ;; 24 ;; *12 ;; 6 ;; 4
+The sum of the first n odd numbers is: ;; n(n + 1) ;; *n² ;; 2n − 1 ;; n(n + 1)/2
+0! equals: ;; 0 ;; *1 ;; undefined ;; −1
+If ⁿC₂ = 28, then n is: ;; 7 ;; *8 ;; 14 ;; 28
+The sum of the first 10 terms of the AP 1, 4, 7, … is: ;; 135 ;; *145 ;; 155 ;; 140
+In how many ways can 5 people stand in a row? ;; 25 ;; 60 ;; *120 ;; 24
+The sum of the first 5 terms of the GP 3, 6, 12, … is: ;; 48 ;; *93 ;; 96 ;; 90
+How many diagonals does a hexagon have? ;; 6 ;; *9 ;; 12 ;; 15
+The number of ways to choose 2 cards from a deck of 52 is: ;; 2652 ;; *1326 ;; 104 ;; 2704
+The 3rd term of an AP is 12 and the 7th term is 24. The common difference is: ;; 4 ;; *3 ;; 6 ;; 2
+How many different words can be formed from the letters of APPLE? ;; 120 ;; *60 ;; 24 ;; 30
+The 8th term of the GP 81, 27, 9, … is: ;; 1/9 ;; *1/27 ;; 1/3 ;; 1/81
+The number of ways 6 people can sit around a round table is: ;; 720 ;; *120 ;; 360 ;; 60
+1² + 2² + … + 10² equals: ;; 355 ;; *385 ;; 400 ;; 505
+In how many ways can 4 boys and 3 girls sit in a row if the 3 girls must sit together? ;; 144 ;; *720 ;; 5040 ;; 240
+In how many ways can 4 questions be chosen from 10 if one particular question is compulsory? ;; 210 ;; *84 ;; 120 ;; 36
+If a, b, c are in AP, then: ;; b² = ac ;; *2b = a + c ;; b = a + c ;; a² = bc
+If a, b, c are in GP, then: ;; 2b = a + c ;; *b² = ac ;; a = b + c ;; ab = c
+How many handshakes happen among 10 people if each pair shakes hands once? ;; 90 ;; 100 ;; *45 ;; 20
+1 + 2 + 2² + … + 2⁹ equals: ;; 512 ;; *1023 ;; 1024 ;; 511
+1³ + 2³ + 3³ + 4³ + 5³ equals: ;; 125 ;; *225 ;; 155 ;; 250
+How many 4-digit numbers have no repeated digit? ;; 5040 ;; *4536 ;; 9000 ;; 3024
+If ⁿP₂ = 56, then n is: ;; 7 ;; *8 ;; 14 ;; 28
+The sum of the first n terms of an AP is n² + 2n. Its first term is: ;; 1 ;; *3 ;; 2 ;; 5
+In how many ways can 2 men and 2 women be chosen from 5 men and 4 women? ;; 20 ;; *60 ;; 126 ;; 40
+How many triangles can be formed from 8 points, no three of which are collinear? ;; 24 ;; *56 ;; 336 ;; 28
+The single arithmetic mean between 7 and 19 is: ;; 12 ;; *13 ;; 14 ;; 11
+The number of arrangements of the letters of MISSISSIPPI is: ;; 11! ;; *11! / (4! 4! 2!) ;; 11! / (4! 2!) ;; 11! / 4!
+The sum to infinity of 0.9 + 0.09 + 0.009 + … is: ;; 0.99 ;; *1 ;; 0.9 ;; 9
+In how many ways can 3 different prizes go to 5 students if one student may win more than one prize? ;; 60 ;; 15 ;; *125 ;; 243

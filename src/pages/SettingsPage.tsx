@@ -172,7 +172,7 @@ function GeminiKeyCard({ hint, onChanged }: { hint: string | null; onChanged: ()
         <div>
           <h2 className="text-lg font-semibold">Gemini key</h2>
           <p className="mt-1 max-w-lg text-sm text-muted">
-            Used for the AI tutor, Round 3 quizzes and daily book picks. It is stored on the server
+            Used for the AI tutor, “Why was I wrong?” and daily book picks. It is stored on the server
             and never shown again. Get a free key from{' '}
             <a
               href="https://aistudio.google.com/apikey"

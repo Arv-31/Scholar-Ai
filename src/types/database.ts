@@ -18,12 +18,14 @@ export type Subject = { id: string; exam_id: string; name: string; sort_order: n
 export type Unit = { id: string; subject_id: string; name: string; sort_order: number }
 export type Subtopic = { id: string; unit_id: string; name: string; sort_order: number }
 
-export type Round = 1 | 2 | 3
+// A quiz round of a subtopic: 1 to 10 (see ROUNDS in lib/quiz.ts)
+export type Round = number
 
 export type Question = {
   id: string
   unit_id: string
-  round: 1 | 2
+  subtopic_id: string | null
+  round: Round
   question: string
   options: string[]
   correct_index: number
@@ -41,6 +43,7 @@ export type AnswerRecord = {
 export type QuizAttempt = {
   id: string
   unit_id: string
+  subtopic_id?: string | null // empty for attempts made before subtopic rounds
   round: Round
   score: number
   total: number

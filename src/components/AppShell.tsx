@@ -33,7 +33,7 @@ const NAV: Record<Mode, { to: string; label: string; short: string; wide?: boole
 
 // 'Subjects' stays highlighted inside a unit or quiz page.
 function isActive(to: string, pathname: string): boolean {
-  if (to === '/exam') return pathname === '/exam' || /^\/exam\/(unit|notes)/.test(pathname)
+  if (to === '/exam') return pathname === '/exam' || /^\/exam\/(unit|notes|subtopic)/.test(pathname)
   return pathname === to
 }
 

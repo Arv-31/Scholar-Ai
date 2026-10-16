@@ -1,61 +1,69 @@
 import { useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import ProgressBar from '../components/ProgressBar'
 import WhyWrong from '../components/WhyWrong'
 import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
 import { useLoad } from '../hooks/useLoad'
-import { PASS_PERCENT, scoreQuiz, type QuizQuestion } from '../lib/quiz'
-import { getUnit } from '../services/examService'
+import { PASS_PERCENT, ROUNDS, scoreQuiz, type QuizQuestion } from '../lib/quiz'
+import { getSubtopic, getUnit } from '../services/examService'
 import { errorMessage } from '../services/functionsClient'
-import { getQuestions, getQuickCheck, getSubtopics, saveAttempt } from '../services/quizService'
+import { getQuickCheck, getSubtopicRound, getSubtopics, saveAttempt } from '../services/quizService'
 import type { Round, Subtopic } from '../types/database'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
-// One quiz round: one question at a time, then the result and a review of every answer.
+// What a finished quiz is saved as. Quick checks after a video are practice only (no target).
+type Target = { unitId: string; subtopicId: string; round: Round }
+
+// Two kinds of quiz share this screen:
+//   /exam/subtopic/:subtopicId/round/:round  one of the 10 saved rounds of a subtopic
+//   /exam/unit/:unitId/check                 3 random questions after watching a video
 export default function QuizPage() {
-  const { unitId = '', round: roundParam } = useParams()
-  const round: Round = roundParam === '2' ? 2 : roundParam === '3' ? 3 : 1
-  // ?quick=1 = 3-question check after a video: practice only, never saved as a round
-  const [params] = useSearchParams()
-  const quick = params.get('quick') === '1'
-  // Bumping `attempt` reloads the page data, which also gives round 3 fresh questions.
+  const { unitId, subtopicId, round: roundParam } = useParams()
+  const round = Math.min(ROUNDS, Math.max(1, Number(roundParam) || 1))
+  // Bumping `attempt` starts the same round again from the first question.
   const [attempt, setAttempt] = useState(0)
 
-  const page = useLoad(async () => {
-    const [unit, questions, subtopics] = await Promise.all([
-      getUnit(unitId),
-      quick ? getQuickCheck(unitId) : getQuestions(unitId, round),
-      getSubtopics(unitId),
-    ])
-    return { unit, questions, subtopics }
-  }, `${unitId}-${round}-${attempt}-${quick}`)
-
-  const backTo = `/exam/unit/${unitId}`
-
-  if (page.loading) return <Loading label={round === 3 ? 'Writing your questions' : 'Loading'} />
-
-  if (page.errorCode === 'NO_KEY') {
-    return (
-      <EmptyState
-        title="Round 3 needs your Gemini key"
-        text="Round 3 questions are made fresh by AI using your own free Gemini key."
-        action={
-          <Link to="/settings" className="btn-primary py-2! text-sm">
-            Add key in Settings
-          </Link>
+  const page = useLoad(
+    async () => {
+      if (subtopicId) {
+        const sub = await getSubtopic(subtopicId)
+        if (!sub) return null
+        return {
+          title: `${sub.name} · Round ${round}`,
+          questions: await getSubtopicRound(subtopicId, round),
+          subtopics: [{ id: sub.id, unit_id: sub.unit.id, name: sub.name, sort_order: 0 }],
+          backTo: `/exam/unit/${sub.unit.id}`,
+          target: { unitId: sub.unit.id, subtopicId, round } as Target | null,
+          nextRound: round < ROUNDS ? `/exam/subtopic/${subtopicId}/round/${round + 1}` : null,
         }
-      />
-    )
-  }
+      }
+      const [unit, questions, subtopics] = await Promise.all([
+        getUnit(unitId ?? ''),
+        getQuickCheck(unitId ?? ''),
+        getSubtopics(unitId ?? ''),
+      ])
+      return {
+        title: `${unit?.name ?? 'Unit'} · Quick check`,
+        questions,
+        subtopics,
+        backTo: `/exam/unit/${unitId}`,
+        target: null,
+        nextRound: null,
+      }
+    },
+    `${subtopicId ?? unitId}-${round}-${attempt}`,
+  )
+
+  if (page.loading) return <Loading />
   if (page.error) return <ErrorNote message={page.error} onRetry={page.reload} />
   if (!page.data || page.data.questions.length === 0) {
     return (
       <EmptyState
-        title="No questions yet"
-        text="This round has no questions yet."
+        title="Questions coming soon"
+        text="This round has no questions yet. Try another round of this subtopic."
         action={
-          <Link to={backTo} className="btn-ghost">
+          <Link to={page.data?.backTo ?? '/exam'} className="btn-ghost">
             Back to unit
           </Link>
         }
@@ -65,14 +73,13 @@ export default function QuizPage() {
 
   return (
     <Quiz
-      key={attempt}
-      title={`${page.data.unit?.name ?? 'Unit'} · ${quick ? 'Quick check' : `Round ${round}`}`}
-      quick={quick}
+      key={`${subtopicId}-${round}-${attempt}`}
+      title={page.data.title}
       questions={page.data.questions}
       subtopics={page.data.subtopics}
-      unitId={unitId}
-      round={round}
-      backTo={backTo}
+      target={page.data.target}
+      backTo={page.data.backTo}
+      nextRound={page.data.nextRound}
       onRetry={() => setAttempt((a) => a + 1)}
     />
   )
@@ -82,23 +89,14 @@ type QuizProps = {
   title: string
   questions: QuizQuestion[]
   subtopics: Subtopic[]
-  unitId: string
-  round: Round
+  target: Target | null // null = quick check, practice only
   backTo: string
+  nextRound: string | null
   onRetry: () => void
-  quick?: boolean
 }
 
-function Quiz({
-  title,
-  questions,
-  subtopics,
-  unitId,
-  round,
-  backTo,
-  onRetry,
-  quick = false,
-}: QuizProps) {
+function Quiz({ title, questions, subtopics, target, backTo, nextRound, onRetry }: QuizProps) {
+  const quick = target === null
   const [index, setIndex] = useState(0)
   const [chosen, setChosen] = useState<number[]>([])
   const [finished, setFinished] = useState(false)
@@ -116,9 +114,9 @@ function Quiz({
 
   async function finish() {
     setFinished(true)
-    if (quick) return // practice only: not saved, so it can never complete a unit
+    if (!target) return // practice only: not saved, so it can never complete anything
     try {
-      await saveAttempt(unitId, round, questions, chosen)
+      await saveAttempt(target, questions, chosen)
     } catch (error) {
       setSaveError(errorMessage(error))
     }
@@ -145,15 +143,20 @@ function Quiz({
             </p>
             <p className="mt-4 text-sm text-white/60">
               {quick
-                ? 'Quick check: practice only, it does not count towards completing the unit.'
+                ? 'Quick check: practice only, it does not count towards completing anything.'
                 : result.passed
-                  ? 'Unit complete. Nice work.'
-                  : `Score ${PASS_PERCENT}% or more to complete this unit. Look at the answers below and try again.`}
+                  ? 'Subtopic complete. Nice work.'
+                  : `Score ${PASS_PERCENT}% or more to complete this subtopic. Look at the answers below and try again.`}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button type="button" className="btn-primary py-2! text-sm" onClick={onRetry}>
-                {round === 3 ? 'New questions' : 'Try again'}
+                Try again
               </button>
+              {nextRound && (
+                <Link to={nextRound} className="btn-ghost">
+                  Next round →
+                </Link>
+              )}
               <Link to={backTo} className="btn-ghost">
                 Back to unit
               </Link>
@@ -166,13 +169,10 @@ function Quiz({
           <h2 className="text-xl font-semibold">Review</h2>
           {questions.map((q, i) => {
             const right = chosen[i] === q.correctIndex
+            const subtopic = subtopics.find((t) => t.id === q.subtopicId)
             return (
               <article key={i} className="card p-5">
-                {subtopics.find((t) => t.id === q.subtopicId) && (
-                  <p className="eyebrow mb-1.5">
-                    {subtopics.find((t) => t.id === q.subtopicId)!.name}
-                  </p>
-                )}
+                {subtopic && <p className="eyebrow mb-1.5">{subtopic.name}</p>}
                 <p className="text-sm">
                   <span className="nums mr-2 text-muted">{String(i + 1).padStart(2, '0')}</span>
                   {q.question}

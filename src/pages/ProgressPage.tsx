@@ -156,7 +156,7 @@ export default function ProgressPage() {
                       </Link>
                     </td>
                     <td className="nums px-3 py-3 text-muted">
-                      {attempt.round === 3 ? '3 · AI' : attempt.round}
+                      {attempt.round}
                     </td>
                     <td className="nums px-3 py-3 text-right">
                       <span className="text-muted">
