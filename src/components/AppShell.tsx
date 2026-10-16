@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { Link, useLocation, useNavigate, useOutlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -9,6 +9,7 @@ import type { Mode, Profile } from '../types/database'
 import LandingReveal from './login/LandingReveal'
 import Logo from './Logo'
 import ModeToggle from './ModeToggle'
+import { Loading } from './StateNote'
 
 // Menu items for each mode.
 const NAV: Record<Mode, { to: string; label: string }[]> = {
@@ -141,7 +142,7 @@ export default function AppShell() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                {page}
+                <Suspense fallback={<Loading />}>{page}</Suspense>
               </motion.div>
             </AnimatePresence>
           </main>

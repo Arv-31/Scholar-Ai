@@ -44,3 +44,16 @@ export function onAuthChange(callback: (session: Session | null) => void): () =>
   const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session))
   return () => data.subscription.unsubscribe()
 }
+
+// Emails a reset link. The link opens /reset-password already signed in for that one purpose.
+export async function sendPasswordReset(email: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+  return { error: error?.message ?? null }
+}
+
+export async function updatePassword(password: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.updateUser({ password })
+  return { error: error?.message ?? null }
+}

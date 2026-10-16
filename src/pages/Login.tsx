@@ -5,7 +5,7 @@ import type { ArcherPhase, Point } from '../components/login/ArcherScene'
 import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
 import { clearLanding, setLanding } from '../lib/landing'
-import { signIn, signInWithGoogle, signUp } from '../services/authService'
+import { sendPasswordReset, signIn, signInWithGoogle, signUp } from '../services/authService'
 
 // The night-hill scene loads after the form, so the form is usable straight away.
 const ArcherScene = lazy(() => import('../components/login/ArcherScene'))
@@ -16,6 +16,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
+  const [forgot, setForgot] = useState(false) // "Forgot password?" mode: email only
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -97,6 +98,17 @@ export default function Login() {
     }, 6000)
   }
 
+  async function handleForgot(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setMessage(null)
+    setSubmitting(true)
+    const result = await sendPasswordReset(email)
+    setSubmitting(false)
+    if (result.error) setError(result.error)
+    else setMessage('If that email has an account, a reset link is on its way. Check your inbox.')
+  }
+
   async function handleGoogle() {
     setError(null)
     setLanding({}) // play the landing reveal (from the centre) when Google sends us back
@@ -138,88 +150,155 @@ export default function Login() {
             style={{ boxShadow: '6px 6px 0 rgb(239 234 219 / 0.22)' }}
             onAnimationEnd={() => cardFx === 'card-shake' && setCardFx('')}
           >
-            <p className="eyebrow">{isSignUp ? 'New here' : 'Welcome back'}</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-              {isSignUp ? 'Create account' : 'Sign in'}
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              {isSignUp ? 'Takes less than a minute.' : 'Pick up where you left off.'}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => void handleGoogle()}
-              className="btn-ghost mt-7 w-full gap-3! py-3!"
-            >
-              <GoogleMark />
-              Continue with Google
-            </button>
-
-            <div className="my-5 flex items-center gap-3 text-xs text-muted">
-              <span className="h-px flex-1 bg-line" />
-              or with email
-              <span className="h-px flex-1 bg-line" />
-            </div>
-
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">Email</span>
-                <input
-                  className="field"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  autoComplete="email"
-                />
-              </label>
-
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">Password</span>
-                <input
-                  className="field"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                />
-              </label>
-
-              {error && (
-                <p
-                  role="alert"
-                  className="rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger"
-                >
-                  {error}
+            {forgot ? (
+              <>
+                <p className="eyebrow">Forgot password</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-tight">Reset it</h2>
+                <p className="mt-1 text-sm text-muted">
+                  We will email you a link to choose a new password.
                 </p>
-              )}
-              {message && (
-                <p className="rounded-xl bg-green-soft px-3 py-2.5 text-sm text-green">{message}</p>
-              )}
+                <form className="mt-7 flex flex-col gap-4" onSubmit={handleForgot}>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium">Email</span>
+                    <input
+                      className="field"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      autoComplete="email"
+                    />
+                  </label>
+                  {error && (
+                    <p role="alert" className="bg-danger-soft px-3 py-2.5 text-sm text-danger">
+                      {error}
+                    </p>
+                  )}
+                  {message && (
+                    <p role="status" className="bg-green-soft px-3 py-2.5 text-sm text-green">
+                      {message}
+                    </p>
+                  )}
+                  <button type="submit" className="btn-primary mt-2" disabled={submitting}>
+                    {submitting ? 'Sending…' : 'Send reset link'}
+                  </button>
+                </form>
+                <p className="mt-6 text-center text-sm text-muted">
+                  <button
+                    type="button"
+                    className="cursor-pointer font-medium text-ink underline decoration-green decoration-2 underline-offset-4"
+                    onClick={() => {
+                      setForgot(false)
+                      setError(null)
+                      setMessage(null)
+                    }}
+                  >
+                    Back to sign in
+                  </button>
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="eyebrow">{isSignUp ? 'New here' : 'Welcome back'}</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-tight">
+                  {isSignUp ? 'Create account' : 'Sign in'}
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  {isSignUp ? 'Takes less than a minute.' : 'Pick up where you left off.'}
+                </p>
 
-              <button type="submit" className="btn-primary mt-2" disabled={submitting}>
-                {submitting ? 'Please wait…' : isSignUp ? 'Create account' : 'Sign in'}
-              </button>
-            </form>
+                <button
+                  type="button"
+                  onClick={() => void handleGoogle()}
+                  className="btn-ghost mt-7 w-full gap-3! py-3!"
+                >
+                  <GoogleMark />
+                  Continue with Google
+                </button>
 
-            <p className="mt-6 text-center text-sm text-muted">
-              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-              <button
-                type="button"
-                className="cursor-pointer font-medium text-ink underline decoration-green decoration-2 underline-offset-4"
-                onClick={() => {
-                  setIsSignUp(!isSignUp)
-                  setError(null)
-                  setMessage(null)
-                }}
-              >
-                {isSignUp ? 'Sign in' : 'Sign up'}
-              </button>
-            </p>
+                <div className="my-5 flex items-center gap-3 text-xs text-muted">
+                  <span className="h-px flex-1 bg-line" />
+                  or with email
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+
+                <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium">Email</span>
+                    <input
+                      className="field"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      autoComplete="email"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium">Password</span>
+                    <input
+                      className="field"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                    />
+                  </label>
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      className="-mt-2 cursor-pointer self-end text-xs text-muted underline-offset-4 hover:text-ink hover:underline"
+                      onClick={() => {
+                        setForgot(true)
+                        setError(null)
+                        setMessage(null)
+                      }}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+
+                  {error && (
+                    <p
+                      role="alert"
+                      className="rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger"
+                    >
+                      {error}
+                    </p>
+                  )}
+                  {message && (
+                    <p className="rounded-xl bg-green-soft px-3 py-2.5 text-sm text-green">
+                      {message}
+                    </p>
+                  )}
+
+                  <button type="submit" className="btn-primary mt-2" disabled={submitting}>
+                    {submitting ? 'Please wait…' : isSignUp ? 'Create account' : 'Sign in'}
+                  </button>
+                </form>
+
+                <p className="mt-6 text-center text-sm text-muted">
+                  {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                  <button
+                    type="button"
+                    className="cursor-pointer font-medium text-ink underline decoration-green decoration-2 underline-offset-4"
+                    onClick={() => {
+                      setIsSignUp(!isSignUp)
+                      setError(null)
+                      setMessage(null)
+                    }}
+                  >
+                    {isSignUp ? 'Sign in' : 'Sign up'}
+                  </button>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </main>
