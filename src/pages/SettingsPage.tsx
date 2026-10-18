@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react'
+import BookCover from '../components/BookCover'
 import InstallApp from '../components/InstallApp'
 import PageHeader from '../components/PageHeader'
-import { ErrorNote } from '../components/StateNote'
+import { EmptyState, ErrorNote, Loading } from '../components/StateNote'
 import { useAuth } from '../hooks/useAuth'
 import { useLoad } from '../hooks/useLoad'
 import { useShell } from '../hooks/useShell'
+import { groupBooksByDay, type BookFilter, type PastBook } from '../lib/bookHistory'
 import { signOut } from '../services/authService'
+import { listPastBooks } from '../services/bookService'
 import { listExams } from '../services/examService'
 import { errorMessage } from '../services/functionsClient'
 import { GeminiKeySchema, removeGeminiKey, saveGeminiKey } from '../services/keyService'
@@ -16,7 +19,8 @@ import {
   updateStudyPrefs,
 } from '../services/profileService'
 
-// Account settings: name, exam, exam date + answer language, own Gemini key, install app, sign out.
+// Account settings: name, exam, exam date + answer language, own Gemini key, book picks history,
+// install app, sign out.
 export default function SettingsPage() {
   const { user } = useAuth()
   const { profile, refreshProfile } = useShell()
@@ -34,6 +38,7 @@ export default function SettingsPage() {
           />
           <StudyCard />
           <GeminiKeyCard hint={profile.gemini_key_hint} onChanged={refreshProfile} />
+          <BookHistoryCard />
         </>
       )}
 
@@ -318,5 +323,118 @@ function StudyCard() {
         {status === 'saved' && <span className="text-sm text-green">Saved</span>}
       </div>
     </form>
+  )
+}
+
+const BOOK_FILTERS: { value: BookFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'fiction', label: 'Fiction' },
+  { value: 'non_fiction', label: 'Non-fiction' },
+]
+
+// Every daily book pick so far, newest first, 10 days at a time.
+function BookHistoryCard() {
+  const first = useLoad(() => listPastBooks(0))
+  const [more, setMore] = useState<PastBook[]>([])
+  const [hasMore, setHasMore] = useState<boolean | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [moreError, setMoreError] = useState<string | null>(null)
+  const [filter, setFilter] = useState<BookFilter>('all')
+
+  const books = [...(first.data?.books ?? []), ...more]
+  const canLoadMore = hasMore ?? first.data?.hasMore ?? false
+  const days = groupBooksByDay(books, filter)
+
+  async function handleMore() {
+    setLoadingMore(true)
+    setMoreError(null)
+    try {
+      const page = await listPastBooks(books.length)
+      setMore((current) => [...current, ...page.books])
+      setHasMore(page.hasMore)
+    } catch (err) {
+      setMoreError(errorMessage(err))
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
+  return (
+    <section className="card space-y-4 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Book picks</h2>
+          <p className="mt-1 text-sm text-muted">Every book ScholarAI has suggested to you.</p>
+        </div>
+        <div role="group" aria-label="Show" className="flex border border-ink text-sm">
+          {BOOK_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              aria-pressed={filter === f.value}
+              onClick={() => setFilter(f.value)}
+              className={`px-3 py-1.5 font-medium ${
+                filter === f.value ? 'bg-ink text-paper' : 'hover:bg-ink/5'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {first.loading && <Loading label="Loading your book picks" />}
+      {first.error && <ErrorNote message={first.error} onRetry={first.reload} />}
+      {first.data && days.length === 0 && (
+        <EmptyState
+          title="No book picks yet"
+          text={
+            books.length === 0
+              ? 'Your daily book picks will appear here.'
+              : 'No picks of this kind yet.'
+          }
+        />
+      )}
+
+      {days.map((d) => (
+        <div key={d.day}>
+          <p className="eyebrow">{d.label}</p>
+          <ul className="mt-2 space-y-2">
+            {d.books.map((book) => (
+              <li key={book.kind} className="flex items-center gap-3">
+                <BookCover title={book.title} author={book.author} kind={book.kind} size="small" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{book.title}</p>
+                  <p className="truncate text-sm text-muted">{book.author}</p>
+                </div>
+                <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 rounded-full ${
+                      book.kind === 'fiction' ? 'bg-ember' : 'bg-green'
+                    }`}
+                  />
+                  {book.kind === 'fiction' ? 'Fiction' : 'Non-fiction'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      {moreError && <ErrorNote message={moreError} onRetry={() => void handleMore()} />}
+      {canLoadMore && (
+        <div className="text-center">
+          <button
+            type="button"
+            className="btn-ghost text-sm"
+            disabled={loadingMore}
+            onClick={() => void handleMore()}
+          >
+            {loadingMore ? 'Loading…' : 'Show more'}
+          </button>
+        </div>
+      )}
+    </section>
   )
 }
