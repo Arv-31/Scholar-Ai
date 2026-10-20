@@ -42,6 +42,10 @@ export function isIos(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent)
 }
 
+export function isAndroid(): boolean {
+  return /android/i.test(navigator.userAgent)
+}
+
 // Shows the browser's install dialog. Returns true if the student accepted.
 export async function promptInstall(): Promise<boolean> {
   if (!saved) return false
