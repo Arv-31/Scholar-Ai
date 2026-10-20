@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useRef, useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import LoadingScreen from '../components/LoadingScreen'
 import type { ArcherPhase, Point } from '../components/login/ArcherScene'
 import Logo from '../components/Logo'
@@ -306,6 +306,16 @@ export default function Login() {
               </>
             )}
           </div>
+
+          <p className="mt-4 text-center text-xs text-white/45 lg:text-left">
+            <Link to="/privacy" className="hover:text-white/80 hover:underline">
+              Privacy
+            </Link>
+            {' · '}
+            <Link to="/terms" className="hover:text-white/80 hover:underline">
+              Terms
+            </Link>
+          </p>
         </div>
       </main>
     </div>

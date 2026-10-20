@@ -8,6 +8,7 @@ import RootRedirect from './components/RootRedirect'
 // Each page is downloaded only when it is first opened (code-splitting = faster first load).
 const Login = lazy(() => import('./pages/Login'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const LegalPage = lazy(() => import('./pages/LegalPage'))
 const DefaultHome = lazy(() => import('./pages/DefaultHome'))
 const ExamHome = lazy(() => import('./pages/ExamHome'))
 const UnitPage = lazy(() => import('./pages/UnitPage'))
@@ -24,6 +25,8 @@ const NotesPage = lazy(() => import('./pages/NotesPage'))
 const TITLES: [RegExp, string][] = [
   [/^\/login/, 'Sign in'],
   [/^\/reset-password/, 'Reset password'],
+  [/^\/privacy/, 'Privacy Policy'],
+  [/^\/terms/, 'Terms of Service'],
   [/^\/default/, 'Today'],
   [/^\/exam\/unit\/[^/]+\/quiz/, 'Quiz'],
   [/^\/exam\/unit/, 'Unit'],
@@ -55,6 +58,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+          <Route path="/terms" element={<LegalPage kind="terms" />} />
 
           {/* Everything below needs a logged-in student */}
           <Route element={<ProtectedRoute />}>
